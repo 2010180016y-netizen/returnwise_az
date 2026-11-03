@@ -199,7 +199,7 @@ export const CalculatorPage: React.FC = () => {
                   }
                 >
                   {faq.category === 'LEGAL'
-                    ? '법률 준수'
+                    ? '법률 참고'
                     : faq.category === 'CALCULATION'
                     ? '비용 산식'
                     : faq.category === 'PRIVACY'
