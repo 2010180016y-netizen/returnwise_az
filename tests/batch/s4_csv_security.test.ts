@@ -227,7 +227,7 @@ describe('S4 | explicit evidence only, using existing legal and financial engine
   });
 
   it('unknown marketplace cannot become a valid verified legal platform',()=>{
-    const row=[...baseEvidence];row[4]='=HYPERLINK("steal")';
+    const row=[...baseEvidence];row[4]='=HYPERLINK(steal)';
     const {rows,results}=importEvidence(row);
     assert.equal(rows[0].market,'UNKNOWN');
     assert.equal(results[0].status,'ERROR');
