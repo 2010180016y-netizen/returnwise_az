@@ -51,6 +51,10 @@ try {
   const entColumns = db.prepare("PRAGMA table_info('billing_entitlements')").all()
     .map(row => row.name);
   requireSafe(entColumns.includes('last_event_at'), 'entitlement event clock missing');
+  const caseColumns = db.prepare("PRAGMA table_info('cases')").all()
+    .map(row => row.name);
+  requireSafe(caseColumns.includes('baseline_economic_cost'),
+    'verified report reference field missing');
   requireSafe(fs.existsSync(path.resolve('db/manual_rollback/0002_cases_rollback.sql')),
     'manual rollback must be preserved outside automatic directory');
 
