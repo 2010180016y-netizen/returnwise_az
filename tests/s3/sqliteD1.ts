@@ -44,7 +44,7 @@ export class SQLiteD1 implements D1DatabaseLike {
     return new Prepared(this,sql);
   }
   async batch(statements: D1StatementLike[]) {
-    const results: Array<{success:boolean;meta:{changes:number}}> = [];
+    const results: Array<{success?:boolean;meta:{changes:number}}> = [];
     this.sqlite.exec('BEGIN IMMEDIATE');
     try {
       for(const statement of statements) {
