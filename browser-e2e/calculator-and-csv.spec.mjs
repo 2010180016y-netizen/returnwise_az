@@ -41,6 +41,13 @@ test('fail-closed policy confirmation, correct example costs, metric toggle and 
   await expect(page.getByText('최저비용 추천 (1위)', {exact:true})).toHaveCount(0);
   await expect(page.locator('#step-results')).toContainText('적격');
   await page.getByRole('button', {name:'예시 1 (표준 반품)'}).click();
+  // An example must NOT imply that the shopper has consented or rights reviewed.
+  await expect(page.getByRole('checkbox', {name:/마켓 정책 확인/})).not.toBeChecked();
+  await expect(page.getByRole('checkbox', {name:/소비자 권리 확인/})).not.toBeChecked();
+  await expect(page.getByText('최저비용 추천 (1위)', {exact:true})).toHaveCount(0);
+  await page.getByRole('checkbox', {name:/마켓 정책 확인/}).check();
+  await expect(page.getByText('최저비용 추천 (1위)', {exact:true})).toHaveCount(0);
+  await page.getByRole('checkbox', {name:/소비자 권리 확인/}).check();
   await expect(page.locator('#step-results')).toContainText('25,500원');
   await expect(page.getByText('최저비용 추천 (1위)', {exact:true})).toHaveCount(1);
   await page.getByRole('tab', {name:'현금 지출 기준'}).click();
