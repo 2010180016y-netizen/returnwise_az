@@ -1,117 +1,63 @@
 /**
- * ReturnWise Pro Server-Side Batch Calculation Processor (server/batch/batchProcessor.ts)
- * Integrates with pure calculation engine (calculateAllAlternatives),
- * supports cancellation (AbortSignal), concurrency control, and safe CSV export.
+ * Conservative batch import boundary.
+ *
+ * A price/shipping CSV does not include the customer's consent, marketplace policy,
+ * actual item salvage value, verified commission reversal, or replacement costs.
+ * It must NEVER invent these values and publish a "best option".
+ *
+ * Future paid implementation: extend the input schema with independently verified
+ * financial facts and explicit policy flags; call compareAlternatives per row.
  */
-
 import type { BatchRowInput, BatchRowResult } from '../../src/features/batch/types';
-import { calculateAllAlternatives } from '../../src/domain/calculate';
-import type { ScenarioInput } from '../../src/domain/types';
 import { serializeSafeCsv } from './csvSanitizer';
 
 export function processBatchRows(
   rows: BatchRowInput[],
   options: { signal?: AbortSignal } = {}
-): {
-  results: BatchRowResult[];
-  totalProcessed: number;
-  executionTimeMs: number;
-} {
+): { results: BatchRowResult[]; totalProcessed: number; executionTimeMs: number } {
   const startTime = Date.now();
   const results: BatchRowResult[] = [];
 
-  for (let i = 0; i < rows.length; i++) {
-    // Check cancellation signal
+  for (const row of rows) {
     if (options.signal?.aborted) {
       throw new Error('BATCH_PROCESSING_CANCELLED: 사용자에 의해 일괄 계산 작업이 취소되었습니다.');
     }
+    const valid =
+      Number.isSafeInteger(row.itemPrice) &&
+      row.itemPrice >= 0 &&
+      Number.isSafeInteger(row.initialShipping) &&
+      row.initialShipping >= 0 &&
+      Number.isSafeInteger(row.returnShipping) &&
+      row.returnShipping >= 0 &&
+      Number.isFinite(row.commissionRate) &&
+      row.commissionRate >= 0 &&
+      row.commissionRate <= 100;
 
-    const row = rows[i];
-    try {
-      const feeReversal = Math.floor(row.itemPrice * (row.commissionRate / 100));
-      const recoveredNetValue = Math.floor(row.itemPrice * 0.3); // 보수적 30% 잔존가치 추정
-
-      const scenario: ScenarioInput = {
-        refundAmount: row.itemPrice,
-        reverseShippingSellerCost: row.returnShipping,
-        initialProcurementCost: Math.floor(row.itemPrice * 0.5),
-        recoveredItemNetValue: recoveredNetValue,
-        feeReversalCredit: feeReversal,
-        handlingCost: 500,
-        replacementCost: Math.floor(row.itemPrice * 0.5),
-        replacementOutboundShipping: row.initialShipping,
-        agreedPartialRefund: Math.floor(row.itemPrice * 0.3),
-      };
-
-      const calcResult = calculateAllAlternatives(scenario);
-      const best = calcResult.sortedAlternatives[0];
-      const baseline = calcResult.results.RETURN_FULL.economicCost;
-      const savings = Math.max(0, baseline - best.economicCost);
-
-      let code = 'C01';
-      let name = '표준 반품 회수';
-      if (best.alternative === 'KEEP_FULL') {
-        code = 'C02';
-        name = '회수포기 전액환급';
-      } else if (best.alternative === 'KEEP_PARTIAL') {
-        code = 'C03';
-        name = '자발적 합의 부분환불';
-      } else if (best.alternative === 'EXCHANGE') {
-        code = 'C15';
-        name = '1:1 맞교환';
-      }
-
-      results.push({
-        rowNumber: row.rowNumber,
-        market: row.market,
-        itemPrice: row.itemPrice,
-        bestOptionCode: code,
-        bestOptionName: name,
-        cashOutflow: best.cashOutflow,
-        economicCost: best.economicCost,
-        savingsVsBaseline: savings,
-        status: 'SUCCESS',
-      });
-    } catch (err: unknown) {
-      results.push({
-        rowNumber: row.rowNumber,
-        market: row.market,
-        itemPrice: row.itemPrice,
-        bestOptionCode: 'ERROR',
-        bestOptionName: '계산 오류',
-        cashOutflow: 0,
-        economicCost: 0,
-        savingsVsBaseline: 0,
-        status: 'ERROR',
-        errorMessage: err instanceof Error ? err.message : '알 수 없는 계산 오류',
-      });
-    }
+    results.push({
+      rowNumber: row.rowNumber,
+      market: row.market,
+      itemPrice: row.itemPrice,
+      bestOptionCode: valid ? 'REVIEW_REQUIRED' : 'ERROR',
+      bestOptionName: valid ? '처리 조건 확인 필요' : '입력 검증 실패',
+      cashOutflow: null,
+      economicCost: null,
+      savingsVsBaseline: null,
+      status: valid ? 'REVIEW_REQUIRED' : 'ERROR',
+      errorMessage: valid
+        ? '단순 판매가 CSV만으로는 고객 동의·플랫폼 정책·상품 회수가치 등을 알 수 없어 최저비용 대안을 산출하지 않습니다.'
+        : '유효한 판매가/배송비/수수료율이 필요합니다.',
+    });
   }
 
-  const executionTimeMs = Date.now() - startTime;
-  return {
-    results,
-    totalProcessed: results.length,
-    executionTimeMs,
-  };
+  return { results, totalProcessed: results.length, executionTimeMs: Date.now() - startTime };
 }
 
-/**
- * Generates completely sanitized CSV export of batch results
- */
+/** Do not export null estimates as a misleading 0-KRW saving. */
 export function generateBatchExportCsv(results: BatchRowResult[]): string {
   const headers = [
-    '행번호',
-    '판매마켓',
-    '상품판매가',
-    '최적대안코드',
-    '추천처리방식',
-    '추가현금지출',
-    '순경제적손실',
-    '기준안대비절감액',
-    '계산상태',
+    '행번호', '판매마켓', '상품판매가', '최적대안코드', '추천처리방식',
+    '추가현금지출', '순경제적손실', '기준안대비절감액', '계산상태', '검토사항',
   ];
-
   const rows = results.map((r) => [
     r.rowNumber,
     r.market,
@@ -122,7 +68,7 @@ export function generateBatchExportCsv(results: BatchRowResult[]): string {
     r.economicCost,
     r.savingsVsBaseline,
     r.status,
+    r.errorMessage ?? '',
   ]);
-
   return serializeSafeCsv(headers, rows);
 }
