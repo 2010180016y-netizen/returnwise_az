@@ -12,6 +12,7 @@ import type {
   VerifiedCommit, VerifiedProviderPayment,
 } from '../../server/billing/verifiedBilling';
 import worker from '../../server/worker/index';
+import { reconcileSandboxPayments } from '../../server/billing/reconciliation';
 
 const M_ID='test_mid';
 const key='verified_payment';
@@ -188,6 +189,36 @@ describe('S3 | durable SQLite-backed Cloudflare D1 billing ledger',()=>{
     }finally{s.db.close();}
   });
 
+  it('scheduled reconciliation revokes a refunded existing payment without new charges',async()=>{
+    const s=await setup();
+    try{
+      await s.request();
+      const summary=await reconcileSandboxPayments(s.db,{
+        getPayment:async()=>({...s.provider,status:'CANCELED'}),
+      });
+      assert.equal(summary.scanned,1);
+      assert.equal(summary.updated,1);
+      assert.equal(summary.failed,0);
+      assert.equal((await readD1Entitlement(s.db,'tenant_a')).plan,'FREE');
+      assert.equal((await readD1Entitlement(s.db,'tenant_a')).status,'REFUNDED');
+    }finally{s.db.close();}
+  });
+
+  it('reconciliation fails closed on provider outage, never grants extra rights',async()=>{
+    const s=await setup();
+    try{
+      await s.request();
+      const summary=await reconcileSandboxPayments(s.db,{
+        getPayment:async()=>{throw new Error('test timeout');},
+      });
+      assert.equal(summary.failed,1);
+      const row=s.db.sqlite.prepare(
+        'SELECT COUNT(*) AS cnt FROM billing_events'
+      ).get() as {cnt:number};
+      assert.equal(row.cnt,1);
+    }finally{s.db.close();}
+  });
+
   it('order amount and tenant are server-created and cannot be overridden by user input',async()=>{
     const s=await setup();
     try{
@@ -276,6 +307,37 @@ describe('S3 | Worker HTTP API',()=>{
       assert.equal(a.entitlement.plan,'PRO');
       const b=await worker.fetch(build(s.bearerB),env);
       assert.equal((await b.json() as {entitlement:{plan:string}}).entitlement.plan,'FREE');
+    }finally{s.db.close();}
+  });
+
+  it('case list and case-id lookup cannot expose another tenant records',async()=>{
+    const s=await setup();
+    try{
+      await s.request();
+      const now=Date.now();
+      const sql=`INSERT INTO cases(
+        id,tenant_id,market,item_price,initial_shipping,return_shipping,
+        commission_rate,best_option_code,cash_outflow,economic_cost,
+        policy_verified,retention_expires_at,is_deleted,created_at,updated_at
+      ) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`;
+      for (const [id,tenant] of [['case_a','tenant_a'],['case_b','tenant_b']]) {
+        s.db.sqlite.prepare(sql).run(
+          id,tenant,'SMARTSTORE',30000,3000,3500,
+          5.5,'REVIEW_REQUIRED',0,0,0,now+86400000,0,now,now
+        );
+      }
+      const env={DB:s.db,BILLING_MODE:'test',S3_TEST_ONLY:'yes'};
+      const call=(token:string,path:string)=>worker.fetch(
+        new Request('https://api.example.test'+path,{
+          headers:{Authorization:'Bearer '+token},
+        }),env
+      );
+      const list=await call(s.bearerA,'/api/pro/cases');
+      assert.equal(list.status,200);
+      const data=await list.json() as {cases:Array<{id:string}>};
+      assert.deepEqual(data.cases.map(x=>x.id),['case_a']);
+      assert.equal((await call(s.bearerA,'/api/pro/cases/case_b')).status,404);
+      assert.equal((await call(s.bearerB,'/api/pro/cases')).status,403);
     }finally{s.db.close();}
   });
 
