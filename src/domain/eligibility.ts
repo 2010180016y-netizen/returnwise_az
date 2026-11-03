@@ -265,7 +265,33 @@ export function evaluateAllEligibility(
     EXCHANGE: exchange,
   };
 
+  // Fail closed: an unreviewed policy, unreviewed statutory rights, or an
+  // unknown marketplace must never produce an actionable cost recommendation.
+  // Keep already-blocked alternatives unchanged to preserve their stronger reasons.
+  const reviewBlocks: string[] = [];
+  if (!flags.policyReviewed) {
+    reviewBlocks.push('해당 마켓의 최신 환불·회수 정책 확인이 필요합니다.');
+  }
+  if (!flags.rightsReviewed) {
+    reviewBlocks.push('구매자의 법정 청약철회·환급 권리 확인이 필요합니다.');
+  }
+  if (flags.platform === 'OTHER') {
+    reviewBlocks.push('미확인 플랫폼의 정책 확인 전에는 추천할 수 없습니다.');
+  }
+
+  if (reviewBlocks.length > 0) {
+    for (const evaluation of Object.values(evaluations)) {
+      if (evaluation.status === 'ELIGIBLE') {
+        evaluation.status = 'REQUIRES_REVIEW';
+        evaluation.rankingEligible = false;
+        evaluation.reasons.push(...reviewBlocks);
+        evaluation.legalNotice = undefined;
+      }
+    }
+  }
+
   const globalWarnings: string[] = [];
+  globalWarnings.push(...reviewBlocks);
 
   // L07: 특례 품목 글로벌 경고 안내
   const hasSpecialItemWarning = Boolean(flags.isSpecialItem);
