@@ -1,0 +1,13 @@
+year_month,item_category,provider,description,projected_cost_krw,actual_cost_krw,cost_variance_krw,payment_status,approval_reference,notes
+2026-11,Hosting,Cloudflare Pages,정적 웹 호스팅 Free Tier,0,0,0,FREE,ADR-01,월 500회 빌드 한도 내 무과금 운영
+2026-11,Domain,Cloudflare,기본 서브도메인 (*.pages.dev),0,0,0,FREE,ADR-01,커스텀 도메인 미구매 $0 원칙 준수
+2026-11,Analytics,Cloudflare Web Analytics,익명 웹 트래픽 계측 도구,0,0,0,FREE,T23,쿠키 미사용 무료 분석 도구
+2026-11,CI/CD,GitHub Actions,품질 게이트 워크플로,0,0,0,FREE,T24,공개 저장소 무료 액션 런너 활용
+2026-11,Backend/DB,None,클라이언트 사이드 인메모리 연산,0,0,0,FREE,ADR-01,서버/데이터베이스 유지비 $0
+2026-11,TOTAL,All Providers,월간 총 운영비용 합산,0,0,0,FREE,ADR-01,$0 무자본 인프라 실측 달성
+2026-12,Hosting,Cloudflare Pages,정적 웹 호스팅 Free Tier,0,0,0,FREE,ADR-01,예상 비용 $0
+2026-12,Domain,Cloudflare,기본 서브도메인 (*.pages.dev),0,0,0,FREE,ADR-01,예상 비용 $0
+2026-12,Analytics,Cloudflare Web Analytics,익명 웹 트래픽 계측 도구,0,0,0,FREE,T23,예상 비용 $0
+2026-12,CI/CD,GitHub Actions,품질 게이트 워크플로,0,0,0,FREE,T24,예상 비용 $0
+2026-12,Backend/DB,None,클라이언트 사이드 인메모리 연산,0,0,0,FREE,ADR-01,예상 비용 $0
+2026-12,TOTAL,All Providers,월간 총 운영비용 합산,0,0,0,FREE,ADR-01,$0 무자본 인프라 유지

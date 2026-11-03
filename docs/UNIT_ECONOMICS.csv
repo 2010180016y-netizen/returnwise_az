@@ -1,0 +1,4 @@
+tier_name,monthly_price_krw,pg_fee_rate,pg_fixed_fee_krw,pg_fee_total_krw,server_db_cost_per_user_krw,support_cost_per_user_krw,total_cogs_per_user_krw,gross_profit_per_user_krw,gross_margin_pct,projected_cac_krw,ltv_months,projected_ltv_krw,ltv_to_cac_ratio,notes
+Starter,9900,0.033,33,360,150,800,1310,8590,86.8%,5000,6,51540,10.3,기본 CSV 일괄계산 100건 + 로컬저장 확장
+Pro,14900,0.033,33,525,250,1200,1975,12925,86.7%,6000,8,103400,17.2,월간 리포트 + CSV 무제한 + 2026 개정법률 자동대사 (추천 티어)
+Business,19900,0.033,33,690,400,1800,2890,17010,85.5%,8000,10,170100,21.3,다중 스토어 통합 + 3PL 물류비 연동 + 전담 비동기 CS

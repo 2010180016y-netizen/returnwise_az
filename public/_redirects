@@ -1,0 +1,7 @@
+# ReturnWise Cloudflare Pages Redirects (public/_redirects)
+# Canonicalizes potential alias or typo paths to the root landing page
+
+/calculator / 301
+/return / 301
+/refund / 301
+/exchange / 301

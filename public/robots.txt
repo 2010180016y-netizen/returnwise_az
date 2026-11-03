@@ -1,0 +1,10 @@
+# ReturnWise Robots Policy (public/robots.txt)
+# Allows standard search engine indexing of the canonical single-page calculator.
+# Disallows programmatic spam URL patterns or internal test paths.
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /tests/
+
+Sitemap: https://returnwise.pages.dev/sitemap.xml

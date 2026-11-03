@@ -1,0 +1,161 @@
+{
+  "version": "1.0.0",
+  "category": "LEGAL_AND_POLICY_GATES",
+  "fixtures": [
+    {
+      "id": "L01",
+      "name": "귀책 사유 미확인 차단",
+      "flags": {
+        "reason": "UNKNOWN_REASON",
+        "buyerRequest": "REFUND",
+        "platform": "NAVER",
+        "policyReviewed": false,
+        "rightsReviewed": false
+      },
+      "expected": {
+        "eligibleCount": 0,
+        "rankingEligible": false,
+        "globalWarningKeyword": "L01"
+      }
+    },
+    {
+      "id": "L02",
+      "name": "판매자 귀책 고객 전가 차단",
+      "flags": {
+        "reason": "SELLER_FAULT",
+        "buyerRequest": "REFUND",
+        "platform": "NAVER",
+        "policyReviewed": true,
+        "rightsReviewed": true
+      },
+      "inputs": {
+        "reverseShippingBuyerCost": 3500
+      },
+      "expected": {
+        "targetAlternative": "RETURN_FULL",
+        "status": "INELIGIBLE",
+        "rankingEligible": false,
+        "reasonKeyword": "전자상거래법 제18조 제9항"
+      }
+    },
+    {
+      "id": "L03",
+      "name": "부분환불 소비자 합의 부재 차단",
+      "flags": {
+        "reason": "BUYER_REMORSE",
+        "buyerRequest": "REFUND",
+        "platform": "NAVER",
+        "policyReviewed": true,
+        "rightsReviewed": true,
+        "voluntaryAgreementConfirmed": false,
+        "permittedByPolicyConfirmed": true,
+        "rightsNotRestrictedConfirmed": true
+      },
+      "expected": {
+        "targetAlternative": "KEEP_PARTIAL",
+        "status": "INELIGIBLE",
+        "rankingEligible": false,
+        "reasonKeyword": "자발적 합의"
+      }
+    },
+    {
+      "id": "L04",
+      "name": "마켓 약관상 부분환불 절차 미확인 차단",
+      "flags": {
+        "reason": "BUYER_REMORSE",
+        "buyerRequest": "REFUND",
+        "platform": "NAVER",
+        "policyReviewed": true,
+        "rightsReviewed": true,
+        "voluntaryAgreementConfirmed": true,
+        "permittedByPolicyConfirmed": false,
+        "rightsNotRestrictedConfirmed": true
+      },
+      "expected": {
+        "targetAlternative": "KEEP_PARTIAL",
+        "status": "INELIGIBLE",
+        "rankingEligible": false,
+        "reasonKeyword": "마켓의 약관"
+      }
+    },
+    {
+      "id": "L05",
+      "name": "법정 청약철회권 비침해 미확인 차단",
+      "flags": {
+        "reason": "BUYER_REMORSE",
+        "buyerRequest": "REFUND",
+        "platform": "NAVER",
+        "policyReviewed": true,
+        "rightsReviewed": true,
+        "voluntaryAgreementConfirmed": true,
+        "permittedByPolicyConfirmed": true,
+        "rightsNotRestrictedConfirmed": false
+      },
+      "expected": {
+        "targetAlternative": "KEEP_PARTIAL",
+        "status": "INELIGIBLE",
+        "rankingEligible": false,
+        "reasonKeyword": "청약철회 권리"
+      }
+    },
+    {
+      "id": "L06",
+      "name": "교환 강요 차단",
+      "flags": {
+        "reason": "BUYER_REMORSE",
+        "buyerRequest": "REFUND",
+        "buyerAgreedExchange": false,
+        "platform": "NAVER",
+        "policyReviewed": true,
+        "rightsReviewed": true
+      },
+      "expected": {
+        "targetAlternative": "EXCHANGE",
+        "status": "INELIGIBLE",
+        "rankingEligible": false,
+        "reasonKeyword": "L06"
+      }
+    },
+    {
+      "id": "L07",
+      "name": "특례 품목 전문 검토 안내",
+      "flags": {
+        "reason": "BUYER_REMORSE",
+        "buyerRequest": "REFUND",
+        "platform": "NAVER",
+        "policyReviewed": true,
+        "rightsReviewed": true,
+        "isSpecialItem": true
+      },
+      "expected": {
+        "hasSpecialItemWarning": true,
+        "targetAlternative": "KEEP_FULL",
+        "status": "REQUIRES_REVIEW",
+        "rankingEligible": false,
+        "globalWarningKeyword": "특례 품목"
+      }
+    },
+    {
+      "id": "L08",
+      "name": "정책 검증 만료 안전모드",
+      "flags": {
+        "reason": "BUYER_REMORSE",
+        "buyerRequest": "REFUND",
+        "platform": "NAVER",
+        "policyReviewed": true,
+        "rightsReviewed": true,
+        "voluntaryAgreementConfirmed": true,
+        "permittedByPolicyConfirmed": true,
+        "rightsNotRestrictedConfirmed": true,
+        "isPolicyOutdated": true
+      },
+      "expected": {
+        "isSafeModeActive": true,
+        "targetAlternative": "KEEP_PARTIAL",
+        "status": "INELIGIBLE",
+        "rankingEligible": false,
+        "globalWarningKeyword": "안전 모드"
+      }
+    }
+  ]
+}

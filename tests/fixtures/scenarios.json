@@ -1,0 +1,390 @@
+{
+  "version": "1.0.0",
+  "currency": "KRW",
+  "fixtures": [
+    {
+      "id": "C01",
+      "description": "표준 회수 후 전액환급 기본 시나리오",
+      "inputs": {
+        "refundAmount": 30000,
+        "reverseShippingSellerCost": 3500,
+        "handlingCost": 1000,
+        "recoveredItemNetValue": 9000,
+        "feeReversalCredit": 0,
+        "additionalSellerCost": 0
+      },
+      "flags": {
+        "reason": "BUYER_REMORSE",
+        "buyerRequest": "REFUND",
+        "platform": "NAVER",
+        "policyReviewed": true,
+        "rightsReviewed": true
+      },
+      "expected": {
+        "alternative": "RETURN_FULL",
+        "status": "ELIGIBLE",
+        "cashOutflow": 34500,
+        "economicCost": 25500
+      }
+    },
+    {
+      "id": "C02",
+      "description": "동일 조건 회수 없는 전액환급",
+      "inputs": {
+        "refundAmount": 30000,
+        "reverseShippingSellerCost": 0,
+        "handlingCost": 0,
+        "recoveredItemNetValue": 0,
+        "feeReversalCredit": 0,
+        "additionalSellerCost": 0
+      },
+      "flags": {
+        "reason": "BUYER_REMORSE",
+        "buyerRequest": "REFUND",
+        "platform": "NAVER",
+        "policyReviewed": true,
+        "rightsReviewed": true
+      },
+      "expected": {
+        "alternative": "KEEP_FULL",
+        "status": "ELIGIBLE",
+        "cashOutflow": 30000,
+        "economicCost": 30000
+      }
+    },
+    {
+      "id": "C03",
+      "description": "소비자 자발적 합의된 부분환급 (3대 조건 모두 확인)",
+      "inputs": {
+        "refundAmount": 30000,
+        "agreedPartialRefund": 15000,
+        "feeReversalCredit": 0,
+        "additionalSellerCost": 0
+      },
+      "flags": {
+        "reason": "BUYER_REMORSE",
+        "buyerRequest": "REFUND",
+        "platform": "NAVER",
+        "voluntaryAgreementConfirmed": true,
+        "permittedByPolicyConfirmed": true,
+        "rightsNotRestrictedConfirmed": true
+      },
+      "expected": {
+        "alternative": "KEEP_PARTIAL",
+        "status": "ELIGIBLE",
+        "cashOutflow": 15000,
+        "economicCost": 15000
+      }
+    },
+    {
+      "id": "C04",
+      "description": "부분환급 합의 미확인 시 추천 후보 제외",
+      "inputs": {
+        "refundAmount": 30000,
+        "agreedPartialRefund": 15000,
+        "feeReversalCredit": 0,
+        "additionalSellerCost": 0
+      },
+      "flags": {
+        "reason": "BUYER_REMORSE",
+        "buyerRequest": "REFUND",
+        "platform": "NAVER",
+        "voluntaryAgreementConfirmed": false,
+        "permittedByPolicyConfirmed": true,
+        "rightsNotRestrictedConfirmed": true
+      },
+      "expected": {
+        "alternative": "KEEP_PARTIAL",
+        "status": "BLOCKED_OR_REVIEW",
+        "rankingEligible": false
+      }
+    },
+    {
+      "id": "C05",
+      "description": "수수료 환급 1,000원 확인 시 현금/경제비용 각 1,000원 감소",
+      "inputs": {
+        "refundAmount": 30000,
+        "reverseShippingSellerCost": 3500,
+        "handlingCost": 1000,
+        "recoveredItemNetValue": 9000,
+        "feeReversalCredit": 1000,
+        "additionalSellerCost": 0
+      },
+      "flags": {
+        "reason": "BUYER_REMORSE",
+        "buyerRequest": "REFUND",
+        "platform": "NAVER",
+        "policyReviewed": true,
+        "rightsReviewed": true
+      },
+      "expected": {
+        "alternative": "RETURN_FULL",
+        "status": "ELIGIBLE",
+        "cashOutflow": 33500,
+        "economicCost": 24500
+      }
+    },
+    {
+      "id": "C06",
+      "description": "회수가치 0원일 때 현금지출과 순경제비용 일치",
+      "inputs": {
+        "refundAmount": 30000,
+        "reverseShippingSellerCost": 3500,
+        "handlingCost": 1000,
+        "recoveredItemNetValue": 0,
+        "feeReversalCredit": 0,
+        "additionalSellerCost": 0
+      },
+      "flags": {
+        "reason": "BUYER_REMORSE",
+        "buyerRequest": "REFUND",
+        "platform": "NAVER",
+        "policyReviewed": true,
+        "rightsReviewed": true
+      },
+      "expected": {
+        "alternative": "RETURN_FULL",
+        "status": "ELIGIBLE",
+        "cashOutflow": 34500,
+        "economicCost": 34500
+      }
+    },
+    {
+      "id": "C07",
+      "description": "회수가치 10,000원 증가 시 economicCost만 10,000원 감소하고 cashOutflow 불변",
+      "inputs": {
+        "refundAmount": 30000,
+        "reverseShippingSellerCost": 3500,
+        "handlingCost": 1000,
+        "recoveredItemNetValue": 19000,
+        "feeReversalCredit": 0,
+        "additionalSellerCost": 0
+      },
+      "flags": {
+        "reason": "BUYER_REMORSE",
+        "buyerRequest": "REFUND",
+        "platform": "NAVER",
+        "policyReviewed": true,
+        "rightsReviewed": true
+      },
+      "expected": {
+        "alternative": "RETURN_FULL",
+        "status": "ELIGIBLE",
+        "cashOutflow": 34500,
+        "economicCost": 15500
+      }
+    },
+    {
+      "id": "C08",
+      "description": "판매자부담 운송비 1,000원 증가 시 cashOutflow와 economicCost 모두 1,000원 증가",
+      "inputs": {
+        "refundAmount": 30000,
+        "reverseShippingSellerCost": 4500,
+        "handlingCost": 1000,
+        "recoveredItemNetValue": 9000,
+        "feeReversalCredit": 0,
+        "additionalSellerCost": 0
+      },
+      "flags": {
+        "reason": "BUYER_REMORSE",
+        "buyerRequest": "REFUND",
+        "platform": "NAVER",
+        "policyReviewed": true,
+        "rightsReviewed": true
+      },
+      "expected": {
+        "alternative": "RETURN_FULL",
+        "status": "ELIGIBLE",
+        "cashOutflow": 35500,
+        "economicCost": 26500
+      }
+    },
+    {
+      "id": "C09",
+      "description": "고객부담 운송비 3,500원은 판매자 부담 비용에 합산되지 않음",
+      "inputs": {
+        "refundAmount": 30000,
+        "reverseShippingSellerCost": 0,
+        "reverseShippingBuyerCost": 3500,
+        "handlingCost": 1000,
+        "recoveredItemNetValue": 9000,
+        "feeReversalCredit": 0,
+        "additionalSellerCost": 0
+      },
+      "flags": {
+        "reason": "BUYER_REMORSE",
+        "buyerRequest": "REFUND",
+        "platform": "NAVER",
+        "policyReviewed": true,
+        "rightsReviewed": true
+      },
+      "expected": {
+        "alternative": "RETURN_FULL",
+        "status": "ELIGIBLE",
+        "cashOutflow": 31000,
+        "economicCost": 22000
+      }
+    },
+    {
+      "id": "C10",
+      "description": "모든 금액 필드에 명시적 0원 입력 시 정상 계산(0원)",
+      "inputs": {
+        "refundAmount": 0,
+        "reverseShippingSellerCost": 0,
+        "handlingCost": 0,
+        "recoveredItemNetValue": 0,
+        "feeReversalCredit": 0,
+        "additionalSellerCost": 0
+      },
+      "flags": {
+        "reason": "BUYER_REMORSE",
+        "buyerRequest": "REFUND",
+        "platform": "NAVER",
+        "policyReviewed": true,
+        "rightsReviewed": true
+      },
+      "expected": {
+        "alternative": "RETURN_FULL",
+        "status": "ELIGIBLE",
+        "cashOutflow": 0,
+        "economicCost": 0
+      }
+    },
+    {
+      "id": "C11",
+      "description": "음수, NaN, 소수점 입력 시 에러 반환 및 계산 차단",
+      "invalidInputs": [
+        { "refundAmount": -1000 },
+        { "refundAmount": "NaN" },
+        { "refundAmount": 12.5 },
+        { "refundAmount": "Infinity" }
+      ],
+      "expected": {
+        "status": "INVALID",
+        "error": "INVALID_NUMBER_FORMAT"
+      }
+    },
+    {
+      "id": "C12",
+      "description": "필수 항목 미입력(undefined/빈문자열)과 0원 엄격 구분",
+      "invalidInputs": [
+        { "refundAmount": null },
+        { "refundAmount": "" }
+      ],
+      "expected": {
+        "status": "INVALID",
+        "error": "MISSING_REQUIRED_INPUT"
+      }
+    },
+    {
+      "id": "C13",
+      "description": "최대 허용 금액 경계값(1,000,000,000원) 초과 거부",
+      "inputs": {
+        "refundAmount": 1000000000
+      },
+      "invalidInputs": [
+        { "refundAmount": 1000000001 }
+      ],
+      "expected": {
+        "boundaryValid": true,
+        "overflowError": "MAX_AMOUNT_EXCEEDED"
+      }
+    },
+    {
+      "id": "C14",
+      "description": "기발생 상품 매입원가(20,000원)는 추가비용에 중복 합산되지 않음",
+      "inputs": {
+        "initialProcurementCost": 20000,
+        "refundAmount": 30000,
+        "reverseShippingSellerCost": 3500,
+        "handlingCost": 1000,
+        "recoveredItemNetValue": 9000,
+        "feeReversalCredit": 0,
+        "additionalSellerCost": 0
+      },
+      "expected": {
+        "alternative": "RETURN_FULL",
+        "cashOutflow": 34500,
+        "economicCost": 25500
+      }
+    },
+    {
+      "id": "C15",
+      "description": "1:1 교환 처리 공식 검증 시나리오",
+      "inputs": {
+        "replacementCost": 12000,
+        "reverseShippingSellerCost": 3500,
+        "replacementOutboundShipping": 3000,
+        "handlingCost": 1000,
+        "recoveredItemNetValue": 9000,
+        "feeReversalCredit": 0,
+        "additionalSellerCost": 0
+      },
+      "flags": {
+        "reason": "SELLER_FAULT",
+        "buyerRequest": "EXCHANGE",
+        "platform": "NAVER",
+        "policyReviewed": true,
+        "rightsReviewed": true
+      },
+      "expected": {
+        "alternative": "EXCHANGE",
+        "status": "ELIGIBLE",
+        "cashOutflow": 19500,
+        "economicCost": 10500
+      }
+    },
+    {
+      "id": "C16",
+      "description": "고객이 전액환불 요구 시 교환(EXCHANGE) 대안 추천 제외",
+      "inputs": {
+        "replacementCost": 12000,
+        "reverseShippingSellerCost": 3500,
+        "replacementOutboundShipping": 3000,
+        "handlingCost": 1000,
+        "recoveredItemNetValue": 9000
+      },
+      "flags": {
+        "reason": "BUYER_REMORSE",
+        "buyerRequest": "REFUND",
+        "buyerAgreedExchange": false
+      },
+      "expected": {
+        "alternative": "EXCHANGE",
+        "status": "BLOCKED_OR_REVIEW",
+        "rankingEligible": false
+      }
+    },
+    {
+      "id": "C17",
+      "description": "동일 입력에 대한 완전한 결정적 결과 보장(Pure Function)",
+      "inputs": {
+        "refundAmount": 30000,
+        "reverseShippingSellerCost": 3500,
+        "handlingCost": 1000,
+        "recoveredItemNetValue": 9000
+      },
+      "expected": {
+        "deterministic": true,
+        "repeatCount": 100,
+        "stableSort": true
+      }
+    },
+    {
+      "id": "C18",
+      "description": "환급금액 30,000원에 확정 크레딧 유무 비교(정확히 1,000원 델타)",
+      "scenarioA": {
+        "refundAmount": 30000,
+        "feeReversalCredit": 0
+      },
+      "scenarioB": {
+        "refundAmount": 30000,
+        "feeReversalCredit": 1000
+      },
+      "expected": {
+        "cashDelta": 1000,
+        "economicDelta": 1000
+      }
+    }
+  ]
+}
