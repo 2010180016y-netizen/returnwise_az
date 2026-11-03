@@ -65,7 +65,7 @@ describe('T12 | Calculator Single Page Layout & State Flow', () => {
     it('푸터 면책 고지 및 100% 브라우저 로컬 연산 안내가 포함되어야 한다', () => {
       const html = renderToStaticMarkup(React.createElement(CalculatorPage));
       assert.equal(html.includes('2026.7.21 시행'), true);
-      assert.equal(html.includes('개인정보 및 주문 식별값 수집 제로 (No PII)'), true);
+      assert.equal(html.includes('계산기·CSV 미리보기는 브라우저 내에서 처리됩니다'), true);
     });
   });
 
