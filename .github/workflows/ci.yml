@@ -43,6 +43,9 @@ jobs:
       - name: 3. Production Bundle Build (esbuild)
         run: npm run build
 
+      - name: 3b. S3 Worker ESM bundle validation (offline)
+        run: npm run check:worker
+
       - name: 4. Full Automated Test Suite (all tests)
         run: npm test
 
