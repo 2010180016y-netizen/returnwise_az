@@ -226,15 +226,18 @@ export function parseCsvText(
         const v = h.trim().normalize('NFKC').toLowerCase();
         if (!v || normalized.has(v)) throw new Error('CSV 헤더가 비어 있거나 중복되었습니다.');
         normalized.add(v);
-        if (PII_HEADER_REGEX.test(v)) {
-          // Keep only ordinary header labels for legacy UI warning; no cell values.
-          detectedPiiColumns.push(v.length > 60 ? '[민감정보 열]' : v);
-        }
+        let recognizedBusinessField = false;
         for (const [name,aliases] of Object.entries(ALIASES)) {
           if (aliases.some(a => a.toLowerCase() === v)) {
             if (headerIndexes.has(name)) throw new Error('CSV 필수 열의 별칭이 중복되었습니다.');
             headerIndexes.set(name,idx);
+            recognizedBusinessField = true;
           }
+        }
+        if (!recognizedBusinessField && PII_HEADER_REGEX.test(v)) {
+          // Never echo arbitrary free-form headers: they might themselves contain PII.
+          const benignNames = new Set(['고객명','수령인주소','전화번호','주문번호','성명','이름','address','phone','customer_name','order_id']);
+          detectedPiiColumns.push(benignNames.has(v)?v:'[민감정보 열]');
         }
       });
       if (!headerIndexes.has('itemPrice')) {
