@@ -90,7 +90,7 @@ async function handleRequest(req: Request, env: WorkerEnv): Promise<Response> {
         FROM cases
         WHERE tenant_id=? AND is_deleted=0 AND retention_expires_at>?
         ORDER BY created_at DESC LIMIT 50`
-    ).bind(session.tenantId,Date.now()).run() as unknown as {results:Record<string,unknown>[]};
+    ).bind(session.tenantId,Date.now()).all();
     return json({cases:results ?? []});
   }
 
