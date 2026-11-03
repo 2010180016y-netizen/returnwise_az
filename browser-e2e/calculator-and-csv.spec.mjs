@@ -1,3 +1,4 @@
+/* global Buffer, getComputedStyle, document, window, URL */
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { readFile } from 'node:fs/promises';
