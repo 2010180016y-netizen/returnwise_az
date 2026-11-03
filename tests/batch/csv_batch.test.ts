@@ -20,7 +20,7 @@ import { sanitizeCell, serializeSafeCsv } from '../../server/batch/csvSanitizer'
 
 describe('T36 | CSV Batch Calculation & Security Contract', () => {
   it('policy details missing: CSV must never auto-recommend partial refund or claim fictitious savings', () => {
-    const { rows } = parseCsvText('판매가,초기배송비,회수배송비,수수료율,마켓\\n30000,3000,3500,5.5,SMARTSTORE');
+    const { rows } = parseCsvText('판매가,초기배송비,회수배송비,수수료율,마켓\n30000,3000,3500,5.5,SMARTSTORE');
     const result = processBatchRows(rows).results[0];
     assert.equal(result.status, 'REVIEW_REQUIRED');
     assert.equal(result.bestOptionCode, 'REVIEW_REQUIRED');
