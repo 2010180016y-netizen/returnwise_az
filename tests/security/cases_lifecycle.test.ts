@@ -332,7 +332,7 @@ describe('T35 | Cases Lifecycle, Retention, Deletion & Backup Contract', () => {
     });
 
     it('db/manual_rollback/0002_cases_rollback.sql 파일이 존재하고 DROP 명령을 포함해야 한다', () => {
-      const downPath = path.resolve('db/migrations/0002_cases_rollback.sql');
+      const downPath = path.resolve('db/manual_rollback/0002_cases_rollback.sql');
       assert.ok(fs.existsSync(downPath));
       assert.ok(!fs.existsSync(path.resolve('db/migrations/0002_cases_rollback.sql')));
       const sql = fs.readFileSync(downPath, 'utf-8');
