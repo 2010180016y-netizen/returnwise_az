@@ -1,3 +1,5 @@
+> **S3 공식 규격 정정 (2026-11-03):** `tosspayments-webhook-signature`는 토스페이먼츠 공식 문서상 `payout.changed` 및 `seller.changed`에만 해당하며 일반 `PAYMENT_STATUS_CHANGED`에 적용되지 않습니다. 따라서 이 파일의 S2 서명 검증 설명을 결제상태 웹훅의 운영 연동 지침으로 사용하면 안 됩니다. 실제 결제 권한은 서버 주도 결제 결과를 토스 조회 API로 독립 확인한 후 D1 원장에 반영합니다. 상세: [S3 D1 구현](../security/S3_D1_IMPLEMENTATION.md). 공식: https://docs.tosspayments.com/reference/using-api/webhook-events
+
 # S2 실행 결과 보고서 — Toss Payments 결제 보안
 
 - 작업일: 2026-11-03 (Asia/Seoul)
