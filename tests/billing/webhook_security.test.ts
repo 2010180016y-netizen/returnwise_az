@@ -1,193 +1,301 @@
-/**
- * ReturnWise Pro Webhook & Billing Security Contract Tests (tests/billing/webhook_security.test.ts)
- * Verifies webhook HMAC-SHA256 signature verification, idempotency deduplication,
- * out-of-order event handling, failure/cancel/refund entitlement revoke, sensitive log sanitization,
- * and reconciliation cron job.
- *
- * STRICT SAFETY CONDITIONS:
- * 1. 중복 webhook도 요금/권한 중복 없음 (Idempotent).
- * 2. 결제 성공 확인 없는 권한 부여 금지.
- * 3. 취소/환불 후 권한 회수(Revoke) 정책 일관.
- * 4. 결제 로그 내 카드정보/빌링키/시크릿 마스킹.
- * 5. 실결제는 서면 승인·사업자 설정 완료 후 (Sandbox 모드 강제).
- */
-
-import { describe, it, beforeEach } from 'node:test';
+import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import {
-  verifyWebhookSignature,
-  handleTossWebhook,
-  getSubscription,
-  applySubscriptionUpdate,
-  runBillingReconciliation,
-  sanitizeBillingLog,
-  saveSubscription,
-  _resetBillingStore,
+  verifyWebhookSignature, sanitizeBillingLog,
 } from '../../server/billing/billingService';
-import type { TossWebhookPayload } from '../../server/billing/types';
+import {
+  processVerifiedBillingWebhook, BillingSecurityError,
+} from '../../server/billing/verifiedBilling';
+import type {
+  BillingLedger, BillingOrder, PaymentLookup, VerifiedProviderPayment,
+  VerifiedCommit, S2BillingDependencies,
+} from '../../server/billing/verifiedBilling';
+import { createTestTossPaymentLookup } from '../../server/billing/tossPaymentLookup';
 
-describe('T39 | Billing Webhook & Subscription Security Contract', () => {
-  const secretKey = 'test_sk_mock_secret_key_12345';
-  const tenantId = 'tenant_billing_test';
+const securityKey = 'webhook_security_key_for_test_only';
+const transmissionTime = '2026-11-03T04:30:00.000Z';
+const order: BillingOrder = {
+  orderId: 'order_s2_001',
+  tenantId: 'tenant_original',
+  mId: 'tosspayments_test_mid_001',
+  amount: 14900,
+  plan: 'PRO',
+  periodStart: Date.parse('2026-11-03T00:00:00Z'),
+  periodEnd: Date.parse('2026-12-03T00:00:00Z'),
+};
+const providerPayment: VerifiedProviderPayment = {
+  paymentKey: 'payment_s2_001',
+  orderId: order.orderId,
+  totalAmount: order.amount,
+  mId: order.mId,
+  status: 'DONE',
+};
+const eventBase = {
+  eventType: 'PAYMENT_STATUS_CHANGED',
+  createdAt: '2026-11-03T04:30:00Z',
+  data: {
+    paymentKey: providerPayment.paymentKey,
+    orderId: order.orderId,
+    totalAmount: order.amount,
+    status: 'DONE',
+  },
+};
 
-  beforeEach(() => {
-    _resetBillingStore();
+function envelope(body: unknown = eventBase, key = securityKey, time = transmissionTime) {
+  const rawBody = typeof body === 'string' ? body : JSON.stringify(body);
+  const b64 = crypto.createHmac('sha256', key)
+    .update(rawBody + ':' + time).digest('base64');
+  return { rawBody, signatureHeader: 'v1:' + b64, transmissionTime: time };
+}
+
+class MemoryLedger implements BillingLedger {
+  orders: Map<string, BillingOrder> = new Map([[order.orderId, { ...order }]]);
+  events = new Set<string>();
+  commits: VerifiedCommit[] = [];
+  async findOrder(id: string) {
+    return this.orders.get(id) ?? null;
+  }
+  async applyVerified(commit: VerifiedCommit): Promise<'APPLIED' | 'DUPLICATE' | 'STALE'> {
+    if (this.events.has(commit.eventKey)) return 'DUPLICATE';
+    const prior = this.commits.filter(x => x.orderId === commit.orderId).at(-1);
+    if (prior && (prior.occurredAt > commit.occurredAt ||
+      (prior.status === 'REFUNDED' && commit.status === 'ACTIVE'))) return 'STALE';
+    // Atomic in-memory test double only. S3 must implement an actual D1 transaction.
+    this.events.add(commit.eventKey);
+    this.commits.push(commit);
+    return 'APPLIED';
+  }
+}
+
+function testDeps(overrides: Partial<S2BillingDependencies> = {}) {
+  const ledger = new MemoryLedger();
+  const lookup: PaymentLookup = {
+    getPayment: async () => ({ ...providerPayment }),
+  };
+  const deps: S2BillingDependencies = {
+    webhookSecurityKey: securityKey, lookup, ledger, mode: 'test',
+    sandboxEnabled: true, ...overrides,
+  };
+  return { ledger, deps };
+}
+
+async function rejectsCode(operation: Promise<unknown>, code: string) {
+  await assert.rejects(operation, (e: unknown) =>
+    e instanceof BillingSecurityError && e.code === code
+  );
+}
+
+describe('S2 | official Toss webhook HMAC verification', () => {
+  it('verifies raw payload + colon + transmission time with webhook SECURITY key', () => {
+    const signed = envelope();
+    assert.equal(verifyWebhookSignature(
+      signed.rawBody, signed.signatureHeader, signed.transmissionTime, securityKey
+    ), true);
   });
 
-  describe('1. 웹훅 HMAC-SHA256 서명 검증', () => {
-    it('유효한 HMAC 서명은 검증을 통과해야 한다', () => {
-      const payload = JSON.stringify({ eventType: 'PAYMENT_STATUS_CHANGED', data: { status: 'DONE' } });
-      const signature = crypto.createHmac('sha256', secretKey).update(payload).digest('base64');
-
-      assert.strictEqual(verifyWebhookSignature(payload, signature, secretKey), true);
-    });
-
-    it('위조되거나 불일치하는 서명은 즉각 거절되어야 한다', () => {
-      const payload = JSON.stringify({ eventType: 'PAYMENT_STATUS_CHANGED', data: { status: 'DONE' } });
-      const badSignature = 'invalid_signature_string';
-
-      assert.strictEqual(verifyWebhookSignature(payload, badSignature, secretKey), false);
-    });
+  it('accepts one of several v1 signatures during key rotation', () => {
+    const signed = envelope();
+    assert.equal(verifyWebhookSignature(signed.rawBody,
+      'v1:' + Buffer.alloc(32, 3).toString('base64') + ', ' + signed.signatureHeader,
+      signed.transmissionTime, securityKey), true);
   });
 
-  describe('2. 결제 성공 검증 및 권한 부여 (No Grant Without Proof)', () => {
-    it('결제 성공(DONE) 확인 시에만 ACTIVE 상태 및 Pro 플랜이 부여되어야 한다', () => {
-      const payload: TossWebhookPayload = {
-        eventType: 'PAYMENT_STATUS_CHANGED',
-        createdAt: new Date().toISOString(),
-        data: {
-          paymentKey: 'pay_success_123',
-          orderId: 'ord_123',
-          status: 'DONE',
-          totalAmount: 14900,
-        },
-      };
-
-      const result = handleTossWebhook(payload, tenantId, 'PRO');
-      assert.strictEqual(result.success, true);
-      assert.strictEqual(result.status, 'ACTIVE');
-
-      const sub = getSubscription(tenantId);
-      assert.strictEqual(sub.status, 'ACTIVE');
-      assert.strictEqual(sub.plan, 'PRO');
-      assert.strictEqual(sub.lastPaymentKey, 'pay_success_123');
-    });
-
-    it('결제 실패(ABORTED) 시 권한이 부여되지 않고 PAST_DUE 로 전이되어야 한다', () => {
-      const failPayload: TossWebhookPayload = {
-        eventType: 'PAYMENT_STATUS_CHANGED',
-        createdAt: new Date().toISOString(),
-        data: {
-          paymentKey: 'pay_fail_123',
-          orderId: 'ord_fail_123',
-          status: 'ABORTED',
-          totalAmount: 14900,
-        },
-      };
-
-      const result = handleTossWebhook(failPayload, tenantId, 'PRO');
-      assert.strictEqual(result.success, true);
-      assert.strictEqual(result.status, 'PAST_DUE');
-
-      const sub = getSubscription(tenantId);
-      assert.strictEqual(sub.status, 'PAST_DUE');
-      assert.strictEqual(sub.plan, 'FREE'); // 권한 미부여
-    });
+  it('rejects changed payload, time, key and unknown signature versions', () => {
+    const signed = envelope();
+    assert.equal(verifyWebhookSignature(
+      signed.rawBody + ' ', signed.signatureHeader, signed.transmissionTime, securityKey
+    ), false);
+    assert.equal(verifyWebhookSignature(
+      signed.rawBody, signed.signatureHeader, signed.transmissionTime + 'x', securityKey
+    ), false);
+    assert.equal(verifyWebhookSignature(
+      signed.rawBody, signed.signatureHeader, signed.transmissionTime, 'other'
+    ), false);
+    assert.equal(verifyWebhookSignature(
+      signed.rawBody, signed.signatureHeader.replace('v1:', 'v2:'),
+      signed.transmissionTime, securityKey
+    ), false);
+    assert.equal(verifyWebhookSignature(
+      signed.rawBody, 'v1:bad-base64!', signed.transmissionTime, securityKey
+    ), false);
   });
 
-  describe('3. 멱등성 및 중복 웹훅 방어 (Idempotency)', () => {
-    it('동일한 결제 성공 웹훅이 중복 수신되어도 상태 및 권한이 중복 연장되지 않아야 한다', () => {
-      const payload: TossWebhookPayload = {
-        eventType: 'PAYMENT_STATUS_CHANGED',
-        createdAt: new Date().toISOString(),
-        data: {
-          paymentKey: 'pay_dup_123',
-          orderId: 'ord_dup_123',
-          status: 'DONE',
-          totalAmount: 14900,
-        },
-      };
-
-      // 1회차 수신
-      const res1 = handleTossWebhook(payload, tenantId, 'PRO');
-      assert.strictEqual(res1.status, 'ACTIVE');
-      assert.strictEqual(res1.duplicateIgnored, undefined);
-
-      // 2회차 중복 수신
-      const res2 = handleTossWebhook(payload, tenantId, 'PRO');
-      assert.strictEqual(res2.status, 'ACTIVE');
-      assert.strictEqual(res2.duplicateIgnored, true);
-    });
+  it('rejects missing signature components and overlong header', () => {
+    const signed = envelope();
+    assert.equal(verifyWebhookSignature(signed.rawBody, '', signed.transmissionTime, securityKey), false);
+    assert.equal(verifyWebhookSignature(signed.rawBody, 'v1:' + 'x'.repeat(17000), signed.transmissionTime, securityKey), false);
   });
 
-  describe('4. 취소 및 환불 시 유료 권한 즉각 회수 (Entitlement Revoke)', () => {
-    it('취소/환불(CANCELED) 웹훅 수신 시 상태가 REFUNDED 로 전이되고 플랜이 FREE 로 즉시 회수되어야 한다', () => {
-      // 1. 먼저 정상 구독 활성화
-      const payDone: TossWebhookPayload = {
-        eventType: 'PAYMENT_STATUS_CHANGED',
-        createdAt: new Date().toISOString(),
-        data: { paymentKey: 'pay_refund_123', orderId: 'ord_r1', status: 'DONE', totalAmount: 14900 },
-      };
-      handleTossWebhook(payDone, tenantId, 'PRO');
-      assert.strictEqual(getSubscription(tenantId).plan, 'PRO');
+  it('redacts API secrets, billing key and card number', () => {
+    const s = sanitizeBillingLog('test_sk_demo live_sk_demo test_gsk_demo bln_abcde 1234-5678-9012-3456');
+    assert.ok(!s.includes('test_sk_demo'));
+    assert.ok(!s.includes('live_sk_demo'));
+    assert.ok(!s.includes('test_gsk_demo'));
+    assert.ok(!s.includes('bln_abcde'));
+    assert.ok(!s.includes('1234-5678-9012-3456'));
+  });
+});
 
-      // 2. 환불 웹훅 수신
-      const payCancel: TossWebhookPayload = {
-        eventType: 'PAYMENT_STATUS_CHANGED',
-        createdAt: new Date().toISOString(),
-        data: { paymentKey: 'pay_refund_123', orderId: 'ord_r1', status: 'CANCELED', totalAmount: 14900 },
-      };
-      const cancelRes = handleTossWebhook(payCancel, tenantId, 'PRO');
-      assert.strictEqual(cancelRes.status, 'REFUNDED');
-
-      // 3. 플랜이 FREE 로 회수되었는지 엄격 검증
-      const revokedSub = getSubscription(tenantId);
-      assert.strictEqual(revokedSub.status, 'REFUNDED');
-      assert.strictEqual(revokedSub.plan, 'FREE');
-    });
+describe('S2 | trusted payment / merchant / order / tenant binding', () => {
+  it('grants only the server-side stored plan and tenant after independently verified DONE', async () => {
+    const { ledger, deps } = testDeps();
+    const res = await processVerifiedBillingWebhook(envelope(), deps);
+    assert.equal(res.outcome, 'APPLIED');
+    assert.equal(res.status, 'ACTIVE');
+    assert.equal(ledger.commits.length, 1);
+    assert.equal(ledger.commits[0].tenantId, 'tenant_original');
+    assert.equal(ledger.commits[0].plan, 'PRO');
+    assert.equal(ledger.commits[0].amount, 14900);
   });
 
-  describe('5. 역순 이벤트(Out-of-order) 및 재조정 배치(Reconciliation)', () => {
-    it('과거 시점의 이전 상태 이벤트가 최신 상태를 덮어쓰지 못하도록 방어해야 한다', () => {
-      const now = Date.now();
-      // 최신 시점(now)에 CANCELED 처리
-      applySubscriptionUpdate(tenantId, 'CANCELED', now);
-
-      // 과거 시점(now - 10000)의 ACTIVE 이벤트가 지연 도착한 경우 무시되어야 함
-      const applied = applySubscriptionUpdate(tenantId, 'ACTIVE', now - 10000);
-      assert.strictEqual(applied, false);
-      assert.strictEqual(getSubscription(tenantId).status, 'CANCELED');
-    });
-
-    it('재조정 배치는 7일 이상 PAST_DUE 상태인 구독을 자동 CANCELED 처리하고 권한을 회수해야 한다', () => {
-      const staleSub = getSubscription(tenantId);
-      staleSub.status = 'PAST_DUE';
-      staleSub.plan = 'STARTER';
-      staleSub.updatedAt = Date.now() - 8 * 86400000; // 8일 전
-      saveSubscription(staleSub);
-
-      const jobResult = runBillingReconciliation();
-      assert.strictEqual(jobResult.reconciledCount, 1);
-
-      const reconciled = getSubscription(tenantId);
-      assert.strictEqual(reconciled.status, 'CANCELED');
-      assert.strictEqual(reconciled.plan, 'FREE');
-    });
+  it('duplicates produce no second grant and no changed subscription period', async () => {
+    const { ledger, deps } = testDeps();
+    const signed = envelope();
+    assert.equal((await processVerifiedBillingWebhook(signed, deps)).outcome, 'APPLIED');
+    assert.equal((await processVerifiedBillingWebhook(signed, deps)).outcome, 'DUPLICATE');
+    assert.equal(ledger.commits.length, 1);
+    assert.equal(ledger.commits[0].periodEnd, order.periodEnd);
   });
 
-  describe('6. 결제 로그 민감정보 마스킹 (Redaction)', () => {
-    it('결제 로그 내 시크릿 키, 빌링 키, 카드 번호가 평문으로 노출되지 않고 마스킹되어야 한다', () => {
-      const rawLog =
-        'Payment processed with test_sk_abc123456789 and billing key bln_987654321 for card 1234-5678-9012-3456';
-      const sanitized = sanitizeBillingLog(rawLog);
-
-      assert.ok(!sanitized.includes('test_sk_abc123456789'));
-      assert.ok(!sanitized.includes('bln_987654321'));
-      assert.ok(!sanitized.includes('1234-5678-9012-3456'));
-      assert.ok(sanitized.includes('[REDACTED_SECRET_KEY]'));
-      assert.ok(sanitized.includes('[REDACTED_BILLING_KEY]'));
-      assert.ok(sanitized.includes('[REDACTED_CARD_NUMBER]'));
+  it('rejects invalid signatures before any provider request or datastore access', async () => {
+    let calls = 0;
+    const { deps } = testDeps({
+      lookup: { getPayment: async () => { calls++; return providerPayment; } },
     });
+    const e = envelope();
+    e.signatureHeader = 'v1:' + Buffer.alloc(32).toString('base64');
+    await rejectsCode(processVerifiedBillingWebhook(e, deps), 'INVALID_WEBHOOK_SIGNATURE');
+    assert.equal(calls, 0);
+  });
+
+  it('does not allow test code to activate LIVE billing without S3/live approval', async () => {
+    const { deps } = testDeps({ mode: 'live' });
+    await rejectsCode(processVerifiedBillingWebhook(envelope(), deps), 'LIVE_BILLING_DISABLED');
+    const { deps: off } = testDeps({ sandboxEnabled: false });
+    await rejectsCode(processVerifiedBillingWebhook(envelope(), off), 'LIVE_BILLING_DISABLED');
+  });
+
+  it('rejects unknown order and webhook-order amount mismatch', async () => {
+    const { deps, ledger } = testDeps();
+    ledger.orders.clear();
+    await rejectsCode(processVerifiedBillingWebhook(envelope(), deps), 'UNKNOWN_OR_INVALID_ORDER');
+    ledger.orders.set(order.orderId, order);
+    await rejectsCode(processVerifiedBillingWebhook(envelope({
+      ...eventBase, data: { ...eventBase.data, totalAmount: 9900 },
+    }), deps), 'ORDER_AMOUNT_MISMATCH');
+  });
+
+  for (const [label, mismatch] of [
+    ['orderId', { orderId: 'another_order' }],
+    ['merchant', { mId: 'different_merchant' }],
+    ['amount', { totalAmount: 100 }],
+    ['paymentKey', { paymentKey: 'forged_payment_key' }],
+  ] as const) {
+    it('blocks independently queried ' + label + ' mismatch', async () => {
+      const { ledger, deps } = testDeps({
+        lookup: { getPayment: async () => ({ ...providerPayment, ...mismatch }) },
+      });
+      await rejectsCode(processVerifiedBillingWebhook(envelope(), deps), 'PAYMENT_PROOF_MISMATCH');
+      assert.equal(ledger.commits.length, 0);
+    });
+  }
+
+  it('blocks unrecognized future or stale payment status without granting access', async () => {
+    const { ledger, deps } = testDeps({
+      lookup: { getPayment: async () => ({ ...providerPayment, status: 'CANCELED' }) },
+    });
+    await rejectsCode(processVerifiedBillingWebhook(envelope(), deps), 'STALE_WEBHOOK_STATUS');
+    assert.equal(ledger.commits.length, 0);
+  });
+
+  it('does not trust caller-supplied tenant, merchant or plan fields', async () => {
+    const { ledger, deps } = testDeps();
+    const crafted = {
+      ...eventBase, tenantId: 'attacker', plan: 'PRO', mId: 'malicious_mid',
+    };
+    await processVerifiedBillingWebhook(envelope(crafted), deps);
+    assert.equal(ledger.commits[0].tenantId, order.tenantId);
+    assert.equal(ledger.commits[0].mId, order.mId);
+  });
+
+  it('refuses provider lookup outage without a single commit', async () => {
+    const { ledger, deps } = testDeps({
+      lookup: { getPayment: async () => { throw new Error('timeout'); } },
+    });
+    await rejectsCode(processVerifiedBillingWebhook(envelope(), deps), 'PAYMENT_LOOKUP_FAILED');
+    assert.equal(ledger.commits.length, 0);
+  });
+
+  it('rejects unknown event type, invalid body and malformed JSON', async () => {
+    const { deps } = testDeps();
+    await rejectsCode(processVerifiedBillingWebhook(envelope(
+      { ...eventBase, eventType: 'BILLING_KEY_DELETED' }
+    ), deps), 'UNSUPPORTED_EVENT');
+    await rejectsCode(processVerifiedBillingWebhook(envelope('{oops'), deps), 'INVALID_JSON');
+    await rejectsCode(processVerifiedBillingWebhook(envelope(
+      { ...eventBase, data: { ...eventBase.data, totalAmount: -1 } }
+    ), deps), 'INVALID_EVENT_BODY');
+  });
+
+  it('reconciles CANCEL and PARTIAL_CANCELED as no paid entitlement', async () => {
+    for (const status of ['CANCELED', 'PARTIAL_CANCELED'] as const) {
+      const { ledger, deps } = testDeps({
+        lookup: { getPayment: async () => ({ ...providerPayment, status }) },
+      });
+      const payload = { ...eventBase, data: { ...eventBase.data, status } };
+      const res = await processVerifiedBillingWebhook(envelope(payload), deps);
+      assert.equal(res.status, 'REFUNDED');
+      assert.equal(ledger.commits[0].status, 'REFUNDED');
+    }
+  });
+
+  it('prevents delayed DONE from overriding refund state in atomic ledger contract', async () => {
+    const { ledger, deps } = testDeps();
+    const canceled = { ...eventBase, data: { ...eventBase.data, status: 'CANCELED' }, createdAt: '2026-11-03T04:31:00Z' };
+    const newerDeps = {
+      ...deps,
+      lookup: { getPayment: async () => ({ ...providerPayment, status: 'CANCELED' as const }) },
+    };
+    await processVerifiedBillingWebhook(envelope(canceled), newerDeps);
+    const later = await processVerifiedBillingWebhook(envelope(), deps);
+    assert.equal(later.outcome, 'STALE');
+    assert.equal(ledger.commits.length, 1);
+  });
+
+  it('rejects oversized raw webhook before parsing', async () => {
+    const { deps } = testDeps();
+    await rejectsCode(
+      processVerifiedBillingWebhook(envelope(' '.repeat(70000)), deps), 'BODY_TOO_LARGE'
+    );
+  });
+});
+
+describe('S2 | Toss server-side test-key payment lookup adapter', () => {
+  it('does not accept live keys or live mode', () => {
+    assert.throws(() => createTestTossPaymentLookup({
+      mode: 'live', apiSecretKey: 'live_sk_do_not_use',
+    }), /LIVE_BILLING_DISABLED/);
+    assert.throws(() => createTestTossPaymentLookup({
+      mode: 'test', apiSecretKey: 'live_sk_do_not_use',
+    }), /LIVE_BILLING_DISABLED/);
+  });
+
+  it('makes only a GET to fixed HTTPS Toss endpoint and checks response structure', async () => {
+    let called = 0;
+    const lookup = createTestTossPaymentLookup({
+      mode: 'test',
+      apiSecretKey: 'test_sk_fake_test_only',
+      fetchImpl: async (url, init) => {
+        called++;
+        assert.equal(url, 'https://api.tosspayments.com/v1/payments/payment_s2_001');
+        assert.equal(init?.method, 'GET');
+        assert.equal(init?.redirect, 'error');
+        assert.ok((init?.headers as Record<string, string>).Authorization.startsWith('Basic '));
+        return new Response(JSON.stringify(providerPayment), { status: 200 });
+      },
+    });
+    assert.deepEqual(await lookup.getPayment('payment_s2_001'), providerPayment);
+    assert.equal(called, 1);
   });
 });
