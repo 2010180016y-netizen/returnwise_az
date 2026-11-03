@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ReturnWise - 반품·환불·교환 비용 비교 계산기 | 2026 전자상거래법 준수</title>
+    <title>ReturnWise - 반품·환불·교환 비용 비교 계산기 | 2026 전자상거래법 참고</title>
     <meta
       name="description"
-      content="한국 소규모 온라인 판매자를 위한 무료 반품·환불·교환 비용 비교 계산기. 2026년 개정 전자상거래법 가드레일, 4대 대안별 순경제손실 및 현금지출 1원 단위 정밀 산출, 100% 브라우저 로컬 연산."
+      content="한국 소규모 온라인 판매자를 위한 무료 반품·환불·교환 비용 비교 계산기. 2026 전자상거래법·마켓 정책 확인을 돕는 참고용 시뮬레이션, 4대 대안 비용 비교, 100% 브라우저 로컬 연산."
     />
     <link rel="canonical" href="https://returnwise.pages.dev/" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -17,25 +17,21 @@
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="ko_KR" />
     <meta property="og:site_name" content="ReturnWise" />
-    <meta property="og:title" content="ReturnWise - 반품·환불·교환 비용 비교 계산기 | 2026 전자상거래법 준수" />
+    <meta property="og:title" content="ReturnWise - 반품·환불·교환 비용 비교 계산기 | 2026 전자상거래법 참고" />
     <meta
       property="og:description"
-      content="한국 소규모 온라인 판매자를 위한 무료 반품·환불·교환 비용 비교 계산기. 2026 개정 전자상거래법 가드레일 및 순경제손실 1원 단위 정밀 비교."
+      content="한국 소규모 온라인 판매자를 위한 무료 반품·환불·교환 비용 비교 계산기. 2026 전자상거래법 참고 체크포인트와 비용 추정치를 비교합니다. 개별 권리·마켓 정책은 사용자가 직접 확인해야 합니다."
     />
     <meta property="og:url" content="https://returnwise.pages.dev/" />
-    <meta property="og:image" content="https://returnwise.pages.dev/og-image.png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:alt" content="ReturnWise 반품 비용 비교 계산기" />
+    <!-- No OG image is declared until a real image asset is reviewed and deployed. -->
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="ReturnWise - 반품·환불·교환 비용 비교 계산기 | 2026 전자상거래법 준수" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="ReturnWise - 반품·환불·교환 비용 비교 계산기 | 2026 전자상거래법 참고" />
     <meta
       name="twitter:description"
-      content="한국 소규모 온라인 판매자를 위한 무료 반품·환불·교환 비용 비교 계산기. 2026 개정 전자상거래법 가드레일 및 1원 단위 듀얼 지표 비교."
+      content="한국 소규모 온라인 판매자를 위한 무료 반품·환불·교환 비용 비교 계산기. 2026 전자상거래법 참고 체크포인트와 비용 추정치를 비교합니다. 법률 인증 서비스가 아닙니다."
     />
-    <meta name="twitter:image" content="https://returnwise.pages.dev/og-image.png" />
 
     <!-- Schema.org JSON-LD: WebApplication -->
     <script type="application/ld+json">
@@ -44,7 +40,7 @@
         "@type": "WebApplication",
         "name": "ReturnWise",
         "url": "https://returnwise.pages.dev/",
-        "description": "한국 소규모 온라인 판매자를 위한 무료 반품·환불·교환 비용 비교 계산기. 2026 개정 전자상거래법 가드레일 및 1원 단위 듀얼 지표 비교.",
+        "description": "한국 소규모 온라인 판매자를 위한 무료 반품·환불·교환 비용 비교 계산기. 2026 전자상거래법 참고 체크포인트와 비용 추정치를 비교합니다. 법률 인증 서비스가 아닙니다.",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "All",
         "offers": {
@@ -91,7 +87,7 @@
             "name": "ReturnWise에 입력한 금액이나 고객 정보가 외부로 전송되나요?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "아닙니다. ReturnWise는 100% 브라우저 로컬 연산으로 동작하며, 개인 식별 정보(PII)를 입력받지 않고 외부 서버로 어떠한 데이터도 전송하지 않습니다."
+              "text": "아닙니다. 현재 무료 계산기와 CSV 미리보기는 브라우저 안에서 처리하며 고객 데이터를 서버로 업로드하지 않습니다. CSV 원본에는 개인정보가 포함될 수 있으므로 식별정보를 제거한 파일만 선택하세요. 감지된 개인정보 열은 결과에서 제외하지만 완전한 비식별화를 보장하지 않습니다."
             }
           }
         ]
@@ -110,7 +106,7 @@
           고객의 반품 및 교환 요청 시 어떤 방식으로 처리하는 것이 회사의 순경제적 손실을 최소화하는지 4대 대안(표준 회수 후 전액환급, 회수 없는 전액환급, 소비자 합의 부분환급, 1:1 맞교환)을 1원 단위로 비교합니다.
         </p>
 
-        <h2>2026 개정 전자상거래법 가드레일 준수</h2>
+        <h2>2026 전자상거래법 확인 항목 (참고용)</h2>
         <ul>
           <li><strong>제18조 제9항</strong>: 단순변심 청약철회 시 회수 배송비 소비자 부담 원칙 준수</li>
           <li><strong>제18조 제9항 단서</strong>: 판매자 귀책(오배송/하자/파손) 시 반품비 고객 전가 원천 차단 (위반 시 불법)</li>
@@ -120,7 +116,7 @@
 
         <h2>100% 브라우저 로컬 연산 & No-PII 프라이버시 원칙</h2>
         <p>
-          본 서비스는 주문번호, 고객명, 연락처, 주소 등 개인 식별 정보(PII)를 일체 입력받지 않으며, 모든 금융 수식 연산은 사용자의 브라우저 메모리에서만 동작합니다.
+          계산기 입력 폼에는 개인식별정보를 요구하지 않습니다. CSV 미리보기는 사용자가 선택한 파일을 브라우저 메모리에서 처리하고 서버로 업로드하지 않지만, 원본 파일에는 개인정보가 포함될 수 있으므로 식별정보를 제거한 데이터만 사용하세요.
         </p>
       </main>
     </noscript>
