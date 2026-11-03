@@ -348,6 +348,18 @@ describe('T35 | Cases Lifecycle, Retention, Deletion & Backup Contract', () => {
       cashOutflow:10000,economicCost:9000,policyVerified:true,
     };
 
+    it('same idempotency key with different monetary data is rejected',()=>{
+      const key='same_key_payload_guard_001';
+      const created=caseService.createCase(sessionTenantA,{...goodInput,idempotencyKey:key});
+      assert.equal(caseService.createCase(sessionTenantA,{
+        ...goodInput,idempotencyKey:key,
+      }).id,created.id);
+      assert.throws(()=>caseService.createCase(sessionTenantA,{
+        ...goodInput,idempotencyKey:key,economicCost:9001,
+      }),(e:unknown)=>e instanceof AuthError && e.code==='IDEMPOTENCY_PAYLOAD_MISMATCH');
+      assert.equal(caseService.listCases(sessionTenantA).length,1);
+    });
+
     it('restoring an old snapshot cannot resurrect a soft-deleted case',()=>{
       const saved=caseService.createCase(sessionTenantA,{
         ...goodInput,idempotencyKey:'restore_block_key_a',
