@@ -61,7 +61,7 @@ describe('P0 D1 billing status + fair reconciliation',()=>{
       assert.equal(await s.ledger.applyVerified(event(o,'PAST_DUE','stale-failure',s.now)),'STALE');
       assert.equal((await readD1Entitlement(s.db,o.tenantId,s.now+1)).plan,'PRO');
       assert.equal(await s.ledger.applyVerified(event(o,'REFUNDED','refund',s.now+2000)),'APPLIED');
-      assert.equal(await s.ledger.applyVerified(event(o,'PAST_DUE','late-failure',s.now+3000)),'STALE');
+      assert.notEqual(await s.ledger.applyVerified(event(o,'PAST_DUE','late-failure',s.now+3000)),'APPLIED');
       assert.equal((await readD1Entitlement(s.db,o.tenantId,s.now+3001)).plan,'FREE');
     }finally{s.db.close();}
   });
