@@ -314,7 +314,8 @@ body {
 .rw-card-disabled {
   background-color: var(--color-slate-100);
   border: 1px dashed var(--color-slate-300);
-  opacity: 0.85;
+  /* Do not reduce all descendant text contrast; the border/background convey review state. */
+  opacity: 1;
 }
 .rw-card-disabled .rw-card-title {
   color: var(--color-slate-600);
