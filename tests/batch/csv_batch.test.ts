@@ -102,8 +102,8 @@ describe('T36 | CSV Batch Calculation & Security Contract', () => {
       for (const payload of maliciousPayloads) {
         const sanitized = sanitizeCell(payload);
         assert.ok(
-          sanitized.startsWith("'"),
-          `악성 페이로드 [${payload}]는 작은따옴표(')로 접두어 처리되어야 합니다: ${sanitized}`
+          sanitized.startsWith("'") || sanitized.startsWith("\\"'"),
+          `악성 페이로드 [${payload}]는 CSV 이스케이프 내부에 작은따옴표가 있어야 합니다: ${sanitized}`
         );
       }
     });
@@ -118,6 +118,13 @@ describe('T36 | CSV Batch Calculation & Security Contract', () => {
       const csv = serializeSafeCsv(headers, rows);
       assert.ok(csv.includes("'=cmd|..."), '수식 접두어가 작은따옴표로 이스케이프되어야 합니다.');
       assert.ok(csv.includes("'@위험마켓"), '@ 접두어가 작은따옴표로 이스케이프되어야 합니다.');
+    });
+
+    it('formula containing comma, quotation and line break keeps valid CSV quoting', () => {
+      assert.equal(sanitizeCell('=SUM(1,2)'), "\\"'=SUM(1,2)\\"");
+      assert.equal(sanitizeCell('=HYPERLINK(\\"url\\")'), "\\"'=HYPERLINK(\\"\\"url\\"\\")\\"");
+      assert.ok(sanitizeCell('   =1+1').startsWith("'"));
+      assert.ok(sanitizeCell('=1\\n=2').startsWith("\\"'"));
     });
 
     it('배치 결과 내보내기 CSV(generateBatchExportCsv)가 정상 생성되어야 한다', () => {
