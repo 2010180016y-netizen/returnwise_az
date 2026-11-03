@@ -11,7 +11,10 @@
     "test": "node scripts/run-tests.mjs",
     "preview": "vite preview",
     "check:worker": "node scripts/check-s3-worker.mjs",
-    "test:browser": "playwright test --config=playwright.config.mjs"
+    "test:browser": "playwright test --config=playwright.config.mjs",
+    "release:preflight": "node scripts/s6_release_preflight.mjs",
+    "release:authorize:free": "node scripts/s6_release_preflight.mjs --require-ready=FREE",
+    "release:authorize:pro": "node scripts/s6_release_preflight.mjs --require-ready=PRO"
   },
   "dependencies": {
     "react": "^18.3.1",
