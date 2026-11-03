@@ -57,6 +57,20 @@ export class CaseService {
       if (existingId) {
         const existingRecord = this.cases.get(existingId);
         if (existingRecord && !existingRecord.isDeleted) {
+          const expectedOption=input.policyVerified===true
+            ? input.bestOptionCode : 'REVIEW_REQUIRED';
+          if (existingRecord.market!==input.market ||
+              existingRecord.itemPrice!==input.itemPrice ||
+              existingRecord.initialShipping!==input.initialShipping ||
+              existingRecord.returnShipping!==input.returnShipping ||
+              existingRecord.commissionRate!==input.commissionRate ||
+              existingRecord.bestOptionCode!==expectedOption ||
+              existingRecord.cashOutflow!==input.cashOutflow ||
+              existingRecord.economicCost!==input.economicCost ||
+              existingRecord.policyVerified!==(input.policyVerified===true)) {
+            throw new AuthError(409,'IDEMPOTENCY_PAYLOAD_MISMATCH',
+              '동일한 요청 키로 서로 다른 계산 결과를 생성할 수 없습니다.');
+          }
           return existingRecord;
         }
       }
