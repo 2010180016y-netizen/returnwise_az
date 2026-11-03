@@ -18,7 +18,9 @@ export interface MarketBreakdown {
   count: number;
   totalCashOutflow: number;
   totalEconomicCost: number;
-  totalLossMitigated: number;
+  /** Null if any case in this group lacks an exact comparison baseline. */
+  totalLossMitigated: number | null;
+  savingsUnverifiedCases: number;
 }
 
 export interface OptionBreakdown {
@@ -27,6 +29,8 @@ export interface OptionBreakdown {
   name: string;
   totalCashOutflow: number;
   totalEconomicCost: number;
+  totalLossMitigated: number | null;
+  savingsUnverifiedCases: number;
 }
 
 export interface MonthlyReportSummary {
@@ -36,7 +40,8 @@ export interface MonthlyReportSummary {
   totalItemPrice: number;
   totalCashOutflow: number;
   totalEconomicCost: number;
-  totalLossMitigated: number; // 보수적 손실 방어액 (NOT 영업이익/매출)
+  totalLossMitigated: number | null; // null => 근거 불충분, NOT 0원 달성
+  savingsUnverifiedCases: number;
   averageCashOutflowPerCase: number;
   averageEconomicCostPerCase: number;
   byMarket: Record<string, MarketBreakdown>;
