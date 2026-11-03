@@ -86,10 +86,12 @@ export function createD1BillingLedger(db: D1DatabaseLike): BillingLedger {
           SET status=?,state_rank=?,payment_key=?,last_event_key=?,last_event_at=?
           WHERE order_id=? AND tenant_id=? AND state_rank < ?
             AND EXISTS (SELECT 1 FROM billing_events
-                        WHERE event_key=? AND order_id=billing_orders.order_id)
+                        WHERE event_key=? AND order_id=billing_orders.order_id
+                        AND tenant_id=? AND payment_key=? AND status=? AND state_rank=?)
         `).bind(
           commit.status,rank,commit.paymentKey,commit.eventKey,commit.occurredAt,
-          commit.orderId,commit.tenantId,rank,commit.eventKey
+          commit.orderId,commit.tenantId,rank,commit.eventKey,
+          commit.tenantId,commit.paymentKey,commit.status,rank
         ),
         db.prepare(`
           INSERT INTO billing_entitlements
