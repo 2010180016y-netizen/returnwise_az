@@ -100,6 +100,12 @@ export function processBatchRows(
       continue;
     }
     const {inputs,flags}=row.attestedScenario;
+    // An exchange request must not be silently replaced with a refund recommendation.
+    if(flags.buyerRequest!=='REFUND') {
+      results.push(resultRow(row,'REVIEW_REQUIRED',
+        '고객의 교환 요청은 별도 비교 그룹이며 환불 대안을 자동 추천하지 않습니다.'));
+      continue;
+    }
     if(!flags.policyReviewed || !flags.rightsReviewed || flags.isPolicyOutdated) {
       results.push(resultRow(row,'REVIEW_REQUIRED',
         '마켓 정책·소비자 권리·최신 정책 확인이 완료되지 않았습니다.'));
