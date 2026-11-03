@@ -31,7 +31,7 @@ export function validateManifest(m) {
       'duplicate or missing gate id: '+String(gate?.id));
     check(validStatus.has(gate.status),'invalid status '+gate.id);
     check(Array.isArray(gate.evidence),'missing evidence array '+gate.id);
-    check(typeof gate.owner==='string'&&gate.owner.length>2,'missing owner '+gate.id);
+    check(typeof gate.owner==='string'&&gate.owner.trim().length>=2,'missing owner '+gate.id);
     check(Array.isArray(gate.scope)&&gate.scope.length>0,'missing scope '+gate.id);
     check(gate.scope.every(s=>s==='FREE'||s==='PRO'),'invalid scope '+gate.id);
     if(gate.status==='PASS') {
