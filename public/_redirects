@@ -5,3 +5,8 @@
 /return / 301
 /refund / 301
 /exchange / 301
+
+# B2B Affiliate partner redirect routes (fallback to root until external partner IDs bound)
+/partner/3pl / 302
+/partner/packaging / 302
+/partner/erp / 302

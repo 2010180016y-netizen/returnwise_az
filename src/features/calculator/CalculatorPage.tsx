@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { useCalculatorState } from './useCalculatorState';
 import { InputForm } from './InputForm';
 import { ResultView } from './ResultView';
+import { B2BAffiliateBanner } from './B2BAffiliateBanner';
 import { LocalCsvPreview } from './LocalCsvPreview';
 import { Actions } from './Actions';
 import {
@@ -163,6 +164,9 @@ export const CalculatorPage: React.FC = () => {
         expandedBreakdown={expandedBreakdown}
         onToggleBreakdown={toggleBreakdown}
       />
+
+      {/* S6 B2B: B2B Affiliate Partner Banner Slots */}
+      <B2BAffiliateBanner />
 
       {/* S5: client-only CSV validation with no network or persistent upload. */}
       <LocalCsvPreview />
