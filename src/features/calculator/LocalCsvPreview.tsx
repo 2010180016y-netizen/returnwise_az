@@ -134,7 +134,7 @@ export const LocalCsvPreview: React.FC = () => {
               </ul>
             </div>
           )}
-          <div className="rw-table-container">
+          <div className="rw-table-container" tabIndex={0} role="region" aria-label="CSV 검증 결과 표 (키보드로 가로 스크롤 가능)">
             <table className="rw-table">
               <caption style={{textAlign:'left',padding:'0.75rem'}}>
                 결과 앞 {sample.length}행 미리보기 (전체 결과는 CSV로 내보내기)
