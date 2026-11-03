@@ -58,7 +58,8 @@ class MemoryLedger implements BillingLedger {
   }
   async applyVerified(commit: VerifiedCommit): Promise<'APPLIED' | 'DUPLICATE' | 'STALE'> {
     if (this.events.has(commit.eventKey)) return 'DUPLICATE';
-    const prior = this.commits.filter(x => x.orderId === commit.orderId).at(-1);
+    const priorForOrder = this.commits.filter(x => x.orderId === commit.orderId);
+    const prior = priorForOrder[priorForOrder.length - 1];
     if (prior && (prior.occurredAt > commit.occurredAt ||
       (prior.status === 'REFUNDED' && commit.status === 'ACTIVE'))) return 'STALE';
     // Atomic in-memory test double only. S3 must implement an actual D1 transaction.
