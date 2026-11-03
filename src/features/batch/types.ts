@@ -1,31 +1,42 @@
 /**
- * ReturnWise Pro Batch CSV Calculation Types (src/features/batch/types.ts)
- *
- * SPECIAL SAFETY CONDITIONS:
- * 1. 반품 주문 원본 CSV의 개인정보를 무심코 저장하지 않게 설계 (Drop PII columns in memory).
- * 2. CSV Injection (Formula Injection) 안전 처리.
+ * S4 strict batch boundary.
+ * Raw CSV fields (including unknown / PII columns) never escape the parser.
  */
+import type { DecisionFlags, ScenarioInput } from '../../domain/types';
+
+export interface AttestedBatchScenario {
+  /** User-supplied confirmations; never proof of legal compliance. */
+  flags: DecisionFlags;
+  /** Every input used in the refund comparison is explicitly supplied. */
+  inputs: ScenarioInput;
+}
 
 export interface BatchRowInput {
   rowNumber: number;
+  sourceLine?: number;
   market: string;
-  itemPrice: number;
-  initialShipping: number;
-  returnShipping: number;
-  commissionRate: number;
+  itemPrice: number | null;
+  initialShipping: number | null;
+  returnShipping: number | null;
+  commissionRate: number | null;
   rawPiiCleaned: Record<string, string | number>;
+  /** Generic, sanitized messages only: never reflect raw spreadsheet values. */
+  validationErrors?: string[];
+  /** Present only if all required policy and financial evidence fields are explicit. */
+  attestedScenario?: AttestedBatchScenario;
 }
 
 export interface BatchRowResult {
   rowNumber: number;
   market: string;
-  itemPrice: number;
-  bestOptionCode: string; // 'C01' | 'C02' | 'C03' | 'C15'
+  itemPrice: number | null;
+  bestOptionCode: string;
   bestOptionName: string;
   cashOutflow: number | null;
   economicCost: number | null;
   savingsVsBaseline: number | null;
-  status: 'SUCCESS' | 'REVIEW_REQUIRED' | 'ERROR';
+  /** ESTIMATE_ONLY is an informational comparison, NOT legal certification. */
+  status: 'ESTIMATE_ONLY' | 'SUCCESS' | 'REVIEW_REQUIRED' | 'ERROR';
   errorMessage?: string;
 }
 
@@ -43,8 +54,8 @@ export interface BatchValidationSummary {
 }
 
 export interface BatchProcessingOptions {
-  maxRows?: number; // default: 1000
-  maxFileSizeMb?: number; // default: 5MB
+  maxRows?: number; // up to 1000
+  maxFileSizeMb?: number; // up to 5 MiB
   concurrencyLimit?: number;
   signal?: AbortSignal;
 }
