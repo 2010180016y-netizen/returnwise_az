@@ -76,29 +76,36 @@ export function createD1BillingLedger(db: D1DatabaseLike): BillingLedger {
           WHERE o.order_id=? AND o.tenant_id=? AND o.m_id=?
             AND o.amount=? AND o.plan=? AND o.period_start=? AND o.period_end=?
             AND (o.expected_payment_key IS NULL OR o.expected_payment_key=?)
+            AND (o.payment_key IS NULL OR o.payment_key=?)
         `).bind(
           commit.eventKey,commit.paymentKey,commit.status,rank,commit.occurredAt,createdAt,
           commit.orderId,commit.tenantId,commit.mId,commit.amount,commit.plan,
-          commit.periodStart,commit.periodEnd,commit.paymentKey
+          commit.periodStart,commit.periodEnd,commit.paymentKey,commit.paymentKey
         ),
         db.prepare(`
           UPDATE billing_orders
           SET status=?,state_rank=?,payment_key=?,last_event_key=?,last_event_at=?
-          WHERE order_id=? AND tenant_id=? AND state_rank < ?
+          WHERE order_id=? AND tenant_id=?
+            -- State rank is NOT chronological: ACTIVE -> PAST_DUE is a
+            -- legitimate separately verified downgrade. REFUNDED is terminal.
+            AND status != 'REFUNDED'
+            AND (status='PENDING' OR
+                (status IN ('ACTIVE','PAST_DUE') AND last_event_at <= ?))
+            AND (payment_key IS NULL OR payment_key=?)
             AND EXISTS (SELECT 1 FROM billing_events
                         WHERE event_key=? AND order_id=billing_orders.order_id
                         AND tenant_id=? AND payment_key=? AND status=? AND state_rank=?)
         `).bind(
           commit.status,rank,commit.paymentKey,commit.eventKey,commit.occurredAt,
-          commit.orderId,commit.tenantId,rank,commit.eventKey,
-          commit.tenantId,commit.paymentKey,commit.status,rank
+          commit.orderId,commit.tenantId,commit.occurredAt,commit.paymentKey,
+          commit.eventKey,commit.tenantId,commit.paymentKey,commit.status,rank
         ),
         db.prepare(`
           INSERT INTO billing_entitlements
             (tenant_id,order_id,payment_key,plan,status,state_rank,
-             period_start,period_end,last_event_key,updated_at)
+             period_start,period_end,last_event_key,last_event_at,updated_at)
           SELECT o.tenant_id,o.order_id,o.payment_key,o.plan,o.status,o.state_rank,
-                 o.period_start,o.period_end,o.last_event_key,?
+                 o.period_start,o.period_end,o.last_event_key,o.last_event_at,?
           FROM billing_orders o
           WHERE o.order_id=? AND o.tenant_id=? AND o.last_event_key=?
           ON CONFLICT(tenant_id) DO UPDATE SET
@@ -110,10 +117,13 @@ export function createD1BillingLedger(db: D1DatabaseLike): BillingLedger {
             period_start=excluded.period_start,
             period_end=excluded.period_end,
             last_event_key=excluded.last_event_key,
+            last_event_at=excluded.last_event_at,
             updated_at=excluded.updated_at
           WHERE excluded.period_start > billing_entitlements.period_start
              OR (excluded.period_start = billing_entitlements.period_start
-                 AND excluded.state_rank > billing_entitlements.state_rank)
+                 AND billing_entitlements.status != 'REFUNDED'
+                 AND excluded.last_event_at >= billing_entitlements.last_event_at
+                 AND excluded.last_event_key != billing_entitlements.last_event_key)
         `).bind(createdAt,commit.orderId,commit.tenantId,commit.eventKey),
       ]);
 
