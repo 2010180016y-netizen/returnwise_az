@@ -495,3 +495,39 @@ body {
   }
 }
 
+
+/* S5: prevent global horizontal overflow on 320–390px screens. */
+.rw-page-header {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+.rw-page-header nav {
+  width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+}
+.rw-card, .rw-card-content, .rw-stack, .rw-stack-sm, .rw-stack-lg {
+  min-width: 0;
+}
+@media (max-width: 639px) {
+  .rw-page-header {
+    flex-direction: column;
+  }
+  .rw-container {
+    padding: 0.75rem;
+  }
+  .rw-flex-between {
+    flex-wrap: wrap;
+  }
+  .rw-card {
+    padding: 0.875rem;
+  }
+  .rw-table-container {
+    max-width: 100%;
+  }
+}
+/* Native CSV file control remains keyboard reachable with a visible focus ring. */
+#batch-csv-file:focus-visible {
+  outline: 2px solid var(--color-primary-600);
+  outline-offset: 2px;
+}
