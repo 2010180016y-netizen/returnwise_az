@@ -49,6 +49,7 @@ export interface BillingLedger {
   findOrder(orderId: string): Promise<BillingOrder | null>;
   /**
    * MUST atomically insert eventKey if absent, revalidate order binding,
+   * deduplicate (orderId, paymentKey, status) irrespective of webhook eventId,
    * apply a non-regressing order/subscription transition, and commit together.
    * Never implement with independent read / write requests.
    * S3 owns the production D1 implementation and concurrency tests.
