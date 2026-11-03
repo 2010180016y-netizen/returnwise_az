@@ -1,3 +1,7 @@
+> **[S6 정정] 기존 '조건부 상용 공개 PASS', 토스 HMAC 결제상태 검증, 실제 환불/정산 검증 및 월 $0/PG 수수료 가정은 운영 증빙으로 사용할 수 없습니다. S3 재검증에 따라 일반 PAYMENT_STATUS_CHANGED 서명은 문서의 가정과 다르며 실제 Toss 테스트 연동/Cloudflare D1/로그인 발급/과금 승인은 **미검증**입니다. **Pro 공개 BLOCKED**: S6_GATE_MANIFEST 기준.**
+>
+> 근거·승인 책임: [S6 출시에 필요한 실제 증빙](./release/S6_GATE_MANIFEST.json). 과거 테스트 기록 자체를 삭제하거나 위조한 것은 아닙니다.
+
 # ReturnWise Pro 출시 심사 및 운영 지속가능성 종합 보고서 (PRO_LAUNCH_REPORT.md)
 
 - **제품명**: ReturnWise Pro (구독형 반품 최적화 엔지니어링)
