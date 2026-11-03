@@ -3,8 +3,8 @@
  * The apostrophe MUST be applied before CSV quoting. Quoting alone does not
  * stop Excel / spreadsheet applications from evaluating an imported formula.
  */
-const FORMULA_AFTER_LEADING_SPACE = /^[\\u0000-\\u0020\\uFEFF]*[=+@-]/;
-const LEADING_CONTROL = /^[\\t\\r\\n]/;
+const FORMULA_AFTER_LEADING_SPACE = /^[\u0000-\u0020\uFEFF]*[=+@-]/;
+const LEADING_CONTROL = /^[\t\r\n]/;
 
 export function sanitizeCell(value: unknown): string {
   if (value === null || value === undefined) return '';
@@ -15,7 +15,7 @@ export function sanitizeCell(value: unknown): string {
 
   // Never bypass RFC-style CSV escaping after prefixing formula-like data:
   // dangerous values may also contain commas, quotes, or line breaks.
-  if (/[",\\r\\n]/.test(safe)) {
+  if (/[",\r\n]/.test(safe)) {
     return `"${safe.replace(/"/g, '""')}"`;
   }
   return safe;
@@ -26,5 +26,5 @@ export function sanitizeRow(row: unknown[]): string {
 }
 
 export function serializeSafeCsv(headers: string[], rows: unknown[][]): string {
-  return [sanitizeRow(headers), ...rows.map(sanitizeRow)].join('\\n');
+  return [sanitizeRow(headers), ...rows.map(sanitizeRow)].join('\n');
 }
