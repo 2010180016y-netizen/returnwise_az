@@ -92,6 +92,22 @@ describe('S3 | durable SQLite-backed Cloudflare D1 billing ledger',()=>{
     } finally{s.db.close();}
   });
 
+  it('a reused event key with wrong merchant/status cannot change any subscription',async()=>{
+    const s=await setup();
+    try {
+      await s.ledger.applyVerified(commitFor(s,'ACTIVE','proof-event'));
+      const injection=commitFor(s,'REFUNDED','proof-event');
+      injection.mId='forged-merchant';
+      await assert.rejects(s.ledger.applyVerified(injection),/ORDER_BINDING_CHANGED/);
+      const row=s.db.sqlite.prepare(
+        'SELECT status,state_rank FROM billing_orders WHERE order_id=?'
+      ).get(s.order.orderId) as {status:string;state_rank:number};
+      assert.equal(row.status,'ACTIVE');
+      assert.equal(row.state_rank,2);
+      assert.equal((await readD1Entitlement(s.db,'tenant_a')).plan,'PRO');
+    } finally {s.db.close();}
+  });
+
   it('refund wins regardless of late older ACTIVE event for same order',async()=>{
     const s=await setup();
     try {
