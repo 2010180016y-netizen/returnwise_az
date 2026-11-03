@@ -4,6 +4,7 @@ export type SqlValue = string | number | null;
 export interface D1StatementLike {
   bind(...values: SqlValue[]): D1StatementLike;
   first<T = Record<string, unknown>>(): Promise<T | null>;
+  all<T = Record<string, unknown>>(): Promise<{results: T[]; success?: boolean}>;
   run(): Promise<{ success?: boolean; meta: { changes: number } }>;
 }
 
