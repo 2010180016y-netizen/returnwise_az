@@ -6,7 +6,7 @@
 /refund / 301
 /exchange / 301
 
-# B2B Affiliate partner redirect routes (fallback to root until external partner IDs bound)
-/partner/3pl / 302
-/partner/packaging / 302
-/partner/erp / 302
+# B2B Affiliate partner redirect routes (Cloudflare Edge 302 routing)
+/partner/3pl https://www.colosseum.kr/?utm_source=returnwise&utm_medium=partner_banner&utm_campaign=return_3pl 302
+/partner/packaging https://boxstore.co.kr/?utm_source=returnwise&utm_medium=partner_banner&utm_campaign=seller_box 302
+/partner/erp https://www.playauto.co.kr/?utm_source=returnwise&utm_medium=partner_banner&utm_campaign=return_automation 302
