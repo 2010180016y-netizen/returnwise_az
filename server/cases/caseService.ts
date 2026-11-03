@@ -14,10 +14,14 @@ import type { CaseRecord, CreateCaseInput, BackupSnapshot } from './types';
 export class CaseService {
   private cases = new Map<string, CaseRecord>();
   private idempotencyIndex = new Map<string, string>(); // `tenantId:key` -> caseId
+  /** In-memory defense; remote D1 keeps the authoritative durable tombstones. */
+  private deletedIds = new Set<string>();
+  private deletedIdempotencyKeys = new Set<string>();
 
   public clear(): void {
     this.cases.clear();
     this.idempotencyIndex.clear();
+    // Keep tombstones on simulated data loss; D1 owns durability in production.
   }
 
   /**
@@ -45,6 +49,10 @@ export class CaseService {
     // IDEMPOTENCY CHECK: If already processed with this key, return existing record
     if (input.idempotencyKey) {
       const compositeKey = `${session.tenantId}:${input.idempotencyKey}`;
+      if (this.deletedIdempotencyKeys.has(compositeKey)) {
+        throw new AuthError(409, 'IDEMPOTENCY_KEY_DELETED',
+          '삭제된 케이스의 요청 키를 재사용할 수 없습니다.');
+      }
       const existingId = this.idempotencyIndex.get(compositeKey);
       if (existingId) {
         const existingRecord = this.cases.get(existingId);
@@ -122,6 +130,12 @@ export class CaseService {
    */
   public deleteCase(session: UserSession, caseId: string, hardDelete: boolean = false): boolean {
     const record = this.getCaseById(session, caseId); // validates tenant
+    this.deletedIds.add(`${session.tenantId}:${caseId}`);
+    if (record.idempotencyKey) {
+      const key=`${session.tenantId}:${record.idempotencyKey}`;
+      this.deletedIdempotencyKeys.add(key);
+      this.idempotencyIndex.delete(key);
+    }
 
     if (hardDelete) {
       if (record.idempotencyKey) {
@@ -229,18 +243,41 @@ export class CaseService {
       );
     }
 
+    if (!Array.isArray(snapshot.cases)) {
+      throw new AuthError(400, 'INVALID_BACKUP_SNAPSHOT', '잘못된 백업 형식입니다.');
+    }
     let count = 0;
+    const now = Date.now();
     for (const item of snapshot.cases) {
-      // Force tenant scoping upon restore
+      if (!item || typeof item.id!=='string' ||
+          item.tenantId!==session.tenantId) {
+        throw new AuthError(403, 'CROSS_TENANT_RESTORE_FORBIDDEN',
+          '백업 레코드의 조직 식별자가 다릅니다.');
+      }
+      const scopedId=`${session.tenantId}:${item.id}`;
+      const scopedKey=item.idempotencyKey
+        ? `${session.tenantId}:${item.idempotencyKey}` : null;
+      // Never resurrect a delete, expired record or stale snapshot.
+      if (this.deletedIds.has(scopedId) ||
+          (scopedKey && this.deletedIdempotencyKeys.has(scopedKey)) ||
+          item.isDeleted || item.retentionExpiresAt<=now) {
+        continue;
+      }
+      const newer=this.cases.get(item.id);
+      if (newer && (newer.isDeleted || newer.updatedAt>=item.updatedAt)) continue;
       const restoredItem: CaseRecord = {
         ...item,
         tenantId: session.tenantId,
+        // An old snapshot cannot independently certify legal/policy review.
+        policyVerified: false,
+        bestOptionCode: 'REVIEW_REQUIRED',
+        baselineEconomicCost: undefined,
         isDeleted: false,
       };
       this.cases.set(restoredItem.id, restoredItem);
+      if (scopedKey) this.idempotencyIndex.set(scopedKey,restoredItem.id);
       count++;
     }
-
     return { restoredCount: count };
   }
 
