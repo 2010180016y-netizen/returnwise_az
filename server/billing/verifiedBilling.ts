@@ -1,5 +1,8 @@
 /**
- * S2 trusted billing boundary. No HTTP route, paid action, or live key is enabled.
+ * S2 synthetic signed-event test boundary only. NOT a production
+ * PAYMENT_STATUS_CHANGED webhook handler: Toss does NOT sign that event family.
+ * S3 authenticates paid status through server-initiated provider GET verification.
+ * No HTTP route, paid action, or live key is enabled.
  *
  * Only test-mode processing is allowed until S3 implements a durable, atomic
  * Cloudflare D1 adapter, session isolation, and final human launch approval.
