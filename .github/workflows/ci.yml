@@ -46,6 +46,9 @@ jobs:
       - name: 3b. S3 Worker ESM bundle validation (offline)
         run: npm run check:worker
 
+      - name: 3bb. P0 D1 forward-only migration safety and SQLite execution
+        run: npm run check:migrations
+
       - name: 3c. S6 static artifacts and evidence-gate contract (not launch approval)
         run: npm run release:preflight
 

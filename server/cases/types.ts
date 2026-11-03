@@ -16,6 +16,8 @@ export interface CaseRecord {
   bestOptionCode: string;
   cashOutflow: number;
   economicCost: number;
+  /** Exact validated economic cost of standard full-return baseline, if known. */
+  baselineEconomicCost?: number;
   policyVerified: boolean;
   retentionExpiresAt: number;
   isDeleted: boolean;
@@ -33,6 +35,8 @@ export interface CreateCaseInput {
   bestOptionCode: string;
   cashOutflow: number;
   economicCost: number;
+  /** Optional verified comparison result; no inferred/reconstructed savings. */
+  baselineEconomicCost?: number;
   policyVerified?: boolean;
   retentionDays?: number;
 

@@ -35,6 +35,7 @@ export class SQLiteD1 implements D1DatabaseLike {
       '0001_initial_schema.sql',
       '0002_cases_schema.sql',
       '0003_s3_billing_persistence.sql',
+      '0004_billing_reconciliation_cursor.sql',
     ]) {
       const sql=fs.readFileSync(path.resolve('db/migrations',name),'utf8');
       this.sqlite.exec(sql);

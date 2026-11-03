@@ -1,3 +1,5 @@
+-- MANUAL DATA-DESTRUCTIVE ROLLBACK. NEVER execute through D1 migrations apply.
+-- Requires explicit database backup, human review and separate environment approval.
 -- =============================================================================
 -- Migration 0002 Rollback: Revert Return Cases Schema
 -- =============================================================================
