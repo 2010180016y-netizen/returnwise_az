@@ -265,7 +265,57 @@ export function evaluateAllEligibility(
     EXCHANGE: exchange,
   };
 
+  // Fail closed: an unreviewed policy, unreviewed statutory rights, or an
+  // unknown marketplace must never produce an actionable cost recommendation.
+  // Keep already-blocked alternatives unchanged to preserve their stronger reasons.
+  const reviewBlocks: string[] = [];
+  if (!flags.policyReviewed) {
+    reviewBlocks.push('해당 마켓의 최신 환불·회수 정책 확인이 필요합니다.');
+  }
+  if (!flags.rightsReviewed) {
+    reviewBlocks.push('구매자의 법정 청약철회·환급 권리 확인이 필요합니다.');
+  }
+  if (flags.platform === 'OTHER') {
+    reviewBlocks.push('미확인 플랫폼의 정책 확인 전에는 추천할 수 없습니다.');
+  }
+
+  const sellerFault =
+    flags.reason === 'SELLER_FAULT' || flags.reason === 'DEFECT_OR_DIFF';
+  if (sellerFault && (inputs?.reverseShippingBuyerCost ?? 0) > 0) {
+    reviewBlocks.push('판매자 귀책 반품비를 구매자에게 청구한 입력은 수정 전까지 모든 추천이 차단됩니다.');
+  }
+
+  if (reviewBlocks.length > 0) {
+    for (const evaluation of Object.values(evaluations)) {
+      if (evaluation.status === 'ELIGIBLE') {
+        evaluation.status = 'REQUIRES_REVIEW';
+        evaluation.rankingEligible = false;
+        evaluation.reasons.push(...reviewBlocks);
+        evaluation.legalNotice = undefined;
+      }
+    }
+  }
+
+  // A partial refund must be a genuine, nonzero amount below full refund.
+  // Zero or full amount is a different settlement mode, not a partial refund.
+  if (inputs) {
+    const part = inputs.agreedPartialRefund;
+    const full = inputs.refundAmount;
+    if (
+      evaluations.KEEP_PARTIAL.status === 'ELIGIBLE' &&
+      (part === undefined || full === undefined || part <= 0 || part >= full)
+    ) {
+      evaluations.KEEP_PARTIAL.status = 'INELIGIBLE';
+      evaluations.KEEP_PARTIAL.rankingEligible = false;
+      evaluations.KEEP_PARTIAL.reasons.push(
+        '부분환급액은 0원보다 크고 전액환급액보다 작아야 합니다. 합의된 금액을 확인해 주세요.'
+      );
+      evaluations.KEEP_PARTIAL.legalNotice = undefined;
+    }
+  }
+
   const globalWarnings: string[] = [];
+  globalWarnings.push(...reviewBlocks);
 
   // L07: 특례 품목 글로벌 경고 안내
   const hasSpecialItemWarning = Boolean(flags.isSpecialItem);

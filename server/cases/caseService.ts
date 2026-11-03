@@ -56,7 +56,10 @@ export class CaseService {
 
     const now = Date.now();
     const caseId = `case_${now}_${Math.random().toString(36).substring(2, 8)}`;
-    const retentionDays = input.retentionDays || 365;
+    const retentionDays = input.retentionDays ?? 365;
+    if (!Number.isInteger(retentionDays) || retentionDays < 1 || retentionDays > 3650) {
+      throw new AuthError(400, 'INVALID_RETENTION', '보관기간은 1~3650일 정수여야 합니다.');
+    }
     const retentionExpiresAt = now + retentionDays * 24 * 60 * 60 * 1000;
 
     const record: CaseRecord = {
@@ -68,10 +71,11 @@ export class CaseService {
       initialShipping: input.initialShipping,
       returnShipping: input.returnShipping,
       commissionRate: input.commissionRate,
-      bestOptionCode: input.bestOptionCode,
+      // Unverified imports must not be silently written as a "best option".
+      bestOptionCode: input.policyVerified === true ? input.bestOptionCode : 'REVIEW_REQUIRED',
       cashOutflow: input.cashOutflow,
       economicCost: input.economicCost,
-      policyVerified: input.policyVerified ?? true,
+      policyVerified: input.policyVerified === true,
       retentionExpiresAt,
       isDeleted: false,
       createdAt: now,
@@ -91,9 +95,12 @@ export class CaseService {
    * 2. READ CASE: Strict tenant isolation and 404 on deleted
    */
   public getCaseById(session: UserSession, caseId: string): CaseRecord {
+    if (!session || !session.tenantId) {
+      throw new AuthError(401, 'UNAUTHORIZED', '인증되지 않은 요청입니다.');
+    }
     const record = this.cases.get(caseId);
 
-    if (!record || record.isDeleted) {
+    if (!record || record.isDeleted || record.retentionExpiresAt <= Date.now()) {
       throw new AuthError(404, 'NOT_FOUND', '요청하신 반품 케이스를 찾을 수 없습니다.');
     }
 

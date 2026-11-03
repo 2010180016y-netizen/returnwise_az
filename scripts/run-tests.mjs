@@ -22,8 +22,8 @@ function findTestFiles(dir) {
 async function runTests() {
   const testFiles = findTestFiles('tests');
   if (testFiles.length === 0) {
-    console.log('No test files found.');
-    process.exit(0);
+    console.error('Quality gate failed: no test files were discovered.');
+    process.exit(1);
   }
 
   const tmpOutDir = path.resolve('.tmp_tests');

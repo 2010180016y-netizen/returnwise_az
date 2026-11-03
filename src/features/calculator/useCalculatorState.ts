@@ -43,11 +43,11 @@ const initialFlags: DecisionFlags = {
   reason: 'BUYER_REMORSE',
   buyerRequest: 'REFUND',
   platform: 'NAVER',
-  policyReviewed: true,
-  rightsReviewed: true,
+  policyReviewed: false,
+  rightsReviewed: false,
   voluntaryAgreementConfirmed: false,
-  permittedByPolicyConfirmed: true,
-  rightsNotRestrictedConfirmed: true,
+  permittedByPolicyConfirmed: false,
+  rightsNotRestrictedConfirmed: false,
   buyerAgreedExchange: false,
   isSpecialItem: false,
   isPolicyOutdated: false,
@@ -105,8 +105,13 @@ export function useCalculatorState() {
 
   // Derive instant calculation result
   const comparisonResult: ComparisonResult = useMemo(() => {
+    // Invalid or missing amounts must never be interpreted as zero-cost inputs
+    // and displayed as an actionable recommendation.
+    if (Object.keys(inputErrors).length > 0) {
+      return compareAlternatives(parsedInputs, { ...flags, reason: 'UNKNOWN_REASON' }, metric);
+    }
     return compareAlternatives(parsedInputs, flags, metric);
-  }, [parsedInputs, flags, metric]);
+  }, [parsedInputs, inputErrors, flags, metric]);
 
   const updateRawInput = useCallback((key: keyof RawInputFields, value: string) => {
     setRawInputs((prev) => ({ ...prev, [key]: value }));

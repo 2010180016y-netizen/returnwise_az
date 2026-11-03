@@ -22,10 +22,10 @@ export interface BatchRowResult {
   itemPrice: number;
   bestOptionCode: string; // 'C01' | 'C02' | 'C03' | 'C15'
   bestOptionName: string;
-  cashOutflow: number;
-  economicCost: number;
-  savingsVsBaseline: number;
-  status: 'SUCCESS' | 'ERROR';
+  cashOutflow: number | null;
+  economicCost: number | null;
+  savingsVsBaseline: number | null;
+  status: 'SUCCESS' | 'REVIEW_REQUIRED' | 'ERROR';
   errorMessage?: string;
 }
 

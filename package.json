@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "node scripts/run-tests.mjs",
-    "preview": "wrangler pages dev dist"
+    "preview": "vite preview"
   },
   "dependencies": {
     "react": "^18.3.1",

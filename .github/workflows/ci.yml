@@ -1,0 +1,58 @@
+name: ReturnWise CI Quality Gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Minimal Permissions Policy (Principle of Least Privilege)
+permissions:
+  contents: read
+
+# Concurrency Control: cancel redundant in-progress workflows
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gate:
+    name: Quality Gate (Typecheck, Lint, Build, Tests & Audit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20.x with npm cache
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies (clean install)
+        run: npm ci
+
+      - name: 1. Strict TypeScript Typecheck
+        run: npm run typecheck
+
+      - name: 2. ESLint Code Quality & Standards
+        run: npm run lint
+
+      - name: 3. Production Bundle Build (esbuild)
+        run: npm run build
+
+      - name: 4. Full Automated Test Suite (all tests)
+        run: npm test
+
+      - name: 5. Security Vulnerability Audit (High/Critical Zero-Tolerance)
+        run: npm audit --audit-level=high
+
+      - name: 6. Archive Production Build Artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: returnwise-dist
+          path: dist/
+          retention-days: 7

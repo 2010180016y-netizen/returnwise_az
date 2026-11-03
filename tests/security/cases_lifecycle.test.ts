@@ -105,6 +105,39 @@ describe('T35 | Cases Lifecycle, Retention, Deletion & Backup Contract', () => {
     });
   });
 
+  it('missing policy verification must never be stored as verified recommendation', () => {
+    const created = caseService.createCase(sessionTenantA, {
+      market: 'SMARTSTORE',
+      itemPrice: 30000,
+      initialShipping: 3000,
+      returnShipping: 3500,
+      commissionRate: 5.5,
+      bestOptionCode: 'C03',
+      cashOutflow: 15000,
+      economicCost: 15000,
+    });
+    assert.equal(created.policyVerified, false);
+    assert.equal(created.bestOptionCode, 'REVIEW_REQUIRED');
+  });
+
+  it('expired case must be inaccessible even before scheduled purge', () => {
+    const created = caseService.createCase(sessionTenantA, {
+      market: 'SMARTSTORE',
+      itemPrice: 30000,
+      initialShipping: 3000,
+      returnShipping: 3500,
+      commissionRate: 5.5,
+      bestOptionCode: 'C01',
+      cashOutflow: 30000,
+      economicCost: 30000,
+    });
+    created.retentionExpiresAt = Date.now() - 1;
+    assert.throws(
+      () => caseService.getCaseById(sessionTenantA, created.id),
+      (err: unknown) => err instanceof AuthError && err.statusCode === 404
+    );
+  });
+
   describe('2. 멱등성 (Idempotency) 검증', () => {
     it('동일한 멱등키로 재요청 시 중복 생성 없이 기존 레코드가 반환되어야 한다', () => {
       const key = 'req_idemp_12345';

@@ -46,17 +46,18 @@ describe('T09 | Alternative Comparison & Ranking Logic', () => {
         rightsReviewed: true,
         voluntaryAgreementConfirmed: false, // 부분환불 제외
         buyerAgreedExchange: false, // 교환 제외
+        isSpecialItem: true, // 특례품목에서는 회수 없는 환급도 개별 검토
       };
-      // 판매자 귀책인데 구매자 배송비 청구로 RETURN_FULL 차단 -> KEEP_FULL만 유일 적격
+      // RETURN_FULL만 적격인 정당한 단일 선택지 예시
       const inputs: ScenarioInput = {
         ...baseInputs,
-        reverseShippingBuyerCost: 3500,
+        reverseShippingBuyerCost: 0,
       };
 
       const result = compareAlternatives(inputs, flags, 'ECONOMIC_COST');
       assert.equal(result.eligibleCount, 1);
       assert.equal(result.hasMultipleEligible, false);
-      assert.equal(result.bestAlternative?.alternative, 'KEEP_FULL');
+      assert.equal(result.bestAlternative?.alternative, 'RETURN_FULL');
       assert.equal(result.bestAlternative?.rank, 1);
       assert.equal(result.bestAlternative?.isRecommended, false); // 비교 대상 없으므로 false
       assert.equal(result.bestAlternative?.deltaVsBest, 0);
