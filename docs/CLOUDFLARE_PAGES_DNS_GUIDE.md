@@ -42,10 +42,10 @@ ReturnWise는 100% 클라이언트 사이드 React 정적 애플리케이션(SPA
 | **Root directory** | `/` (빈칸 유지) | 저장소 최상위 루트 |
 | **Environment variables** | **설정 없음 (Empty)** | $0 원칙, 외부 비밀키 일체 불필요 |
 
-### Step 4: 첫 배포 실행
-1. 하단 **Save and Deploy** 클릭
-2. 빌드 로그(약 15~30초 소요)에서 `dist/` 업로드 성공 확인
-3. 발급된 `https://returnwise.pages.dev` 링크로 초기 접속 확인
+### Step 4: 첫 배포 완료 상태 (2026-11-03 실측)
+- **라이브 URL**: `https://returnwise-az.pages.dev/` (HTTP 200 실측 완료)
+- **배포 브랜치**: `main` (커밋 `b590744` 기반 자동 빌드 성공)
+- **빌드 파이프라인**: Node.js v22, `npm run build`, `dist/` 정적 번들, 보안 헤더 및 리다이렉트 규칙 4건 파싱 완료.
 
 ---
 

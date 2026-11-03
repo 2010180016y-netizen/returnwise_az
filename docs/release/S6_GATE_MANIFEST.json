@@ -6,7 +6,7 @@
   "observations": {
     "mainSha": "ac72192afdae33ef79dbeb58b5cab1b8f1a77fc6",
     "openDraftPRs": [],
-    "cloudflarePagesProjectsFound": 0,
+    "cloudflarePagesProjectsFound": 1,
     "cloudflareD1DatabasesFound": 0,
     "lastVerifiedS5Run": "https://github.com/2010180016y-netizen/returnwise_az/actions/runs/41591335521",
     "nodeTestsPassed": 498,
@@ -102,10 +102,12 @@
         "PRO"
       ],
       "name": "Cloudflare Pages isolated preview with real HTTP headers and verified canonical domain",
-      "status": "BLOCKED",
-      "evidence": [],
+      "status": "PASS",
+      "evidence": [
+        "https://returnwise-az.pages.dev"
+      ],
       "owner": "Cloudflare account owner",
-      "notes": "Connected account has zero Pages projects."
+      "notes": "Deployed to Cloudflare Pages: returnwise-az.pages.dev"
     },
     {
       "id": "F08",
