@@ -24,7 +24,7 @@ export const OPERATOR_DISCLOSURE: OperatorInfo = {
   businessNumber: '[사람 승인 대기] 사업자등록번호 입력 필요',
   mailOrderReportNumber: '[사람 승인 대기] 통신판매업신고번호 입력 필요',
   address: '[사람 승인 대기] 사업장 소재지 입력 필요',
-  contactEmail: 'contact-review@returnwise.local (임시 문의 창구)',
+  contactEmail: '[사람 승인 대기] 실제 문의처 등록 필요 (현재 연락 불가)',
   status: 'REVIEW_REQUIRED',
   approvalRequiredNote:
     '특별 안전조건 준수: 실제 법인/개인사업자 등록 정보가 확정되어 사람 운영자의 서면 승인이 완료되기 전까지 임의의 사업자 정보를 게시하지 않습니다.',
