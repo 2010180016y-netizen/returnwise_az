@@ -95,7 +95,9 @@ async function handleRequest(req: Request, env: WorkerEnv): Promise<Response> {
     if(access.plan==='FREE') return json({error:'PRO_REQUIRED'},403);
     const {results}=await env.DB.prepare(
       `SELECT id,market,item_price,initial_shipping,return_shipping,
-        commission_rate,best_option_code,cash_outflow,economic_cost,baseline_economic_cost,created_at
+        commission_rate,CASE WHEN policy_verified=1 THEN best_option_code ELSE 'REVIEW_REQUIRED' END AS best_option_code,
+        cash_outflow,economic_cost,CASE WHEN policy_verified=1 THEN baseline_economic_cost ELSE NULL END AS baseline_economic_cost,
+        policy_verified,created_at
         FROM cases
         WHERE tenant_id=? AND is_deleted=0 AND retention_expires_at>?
         ORDER BY created_at DESC LIMIT 50`
@@ -110,7 +112,8 @@ async function handleRequest(req: Request, env: WorkerEnv): Promise<Response> {
     if(!id || id.length>150) return json({error:'NOT_FOUND'},404);
     const data=await env.DB.prepare(
       `SELECT id,market,item_price,initial_shipping,return_shipping,
-        commission_rate,best_option_code,cash_outflow,economic_cost,created_at
+        commission_rate,CASE WHEN policy_verified=1 THEN best_option_code ELSE 'REVIEW_REQUIRED' END AS best_option_code,
+        cash_outflow,economic_cost,policy_verified,created_at
         FROM cases WHERE tenant_id=? AND id=? AND is_deleted=0
         AND retention_expires_at>?`
     ).bind(session.tenantId,id,Date.now()).first();
