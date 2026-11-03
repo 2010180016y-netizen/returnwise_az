@@ -1,22 +1,19 @@
 {
   "schema": "returnwise.s6.release-gates.v1",
   "asOf": "2026-11-03",
-  "source": "GitHub PR review + connected Cloudflare account read-only audit",
+  "source": "Verified GitHub merged PRs and completed Actions run (snapshot as of 2026-11-03; external launch gates remain unverified)",
   "description": "Only explicit external evidence and owner approval can unlock public rollout. Green CI != production readiness.",
   "observations": {
-    "mainSha": "12a1311d12fa1683dd80f3be728a28f3c9c6b30e",
-    "openDraftPRs": [
-      1,
-      2,
-      3,
-      4,
-      5
-    ],
+    "mainSha": "ac72192afdae33ef79dbeb58b5cab1b8f1a77fc6",
+    "openDraftPRs": [],
     "cloudflarePagesProjectsFound": 0,
     "cloudflareD1DatabasesFound": 0,
     "lastVerifiedS5Run": "https://github.com/2010180016y-netizen/returnwise_az/actions/runs/41591335521",
-    "nodeTestsPassed": 477,
-    "chromiumTestsPassed": 24
+    "nodeTestsPassed": 498,
+    "chromiumTestsPassed": 60,
+    "mainShaMeaning": "Last independently verified merged main SHA before P1 work; historical snapshot, not necessarily current HEAD",
+    "lastVerifiedMainRun": "https://github.com/2010180016y-netizen/returnwise_az/actions/runs/41611527619",
+    "browserTestsPassed": 60
   },
   "gates": [
     {
@@ -34,10 +31,10 @@
         "https://github.com/2010180016y-netizen/returnwise_az/pull/4",
         "https://github.com/2010180016y-netizen/returnwise_az/pull/5",
         "https://github.com/2010180016y-netizen/returnwise_az/pull/6",
-        "commit 7e5d704d99c43ebf33a87ec493d8b375b472e3ea"
+        "https://github.com/2010180016y-netizen/returnwise_az/commit/ac72192afdae33ef79dbeb58b5cab1b8f1a77fc6"
       ],
       "owner": "Repository maintainer",
-      "notes": "PRs #1-#6 all merged cleanly into main at commit 7e5d704."
+      "notes": "PRs #1-#6 merged in order; audited consolidated main commit ac72192a. This is versioned historical evidence, not a current release signoff."
     },
     {
       "id": "F02",
@@ -48,12 +45,11 @@
       "name": "Integrated main branch CI and release commit check",
       "status": "PASS",
       "evidence": [
-        "https://github.com/2010180016y-netizen/returnwise_az/actions/runs/41597679544",
-        "commit 7e5d704d99c43ebf33a87ec493d8b375b472e3ea",
-        "485 node tests and 60 browser cross-engine tests passed"
+        "https://github.com/2010180016y-netizen/returnwise_az/actions/runs/41611527619",
+        "https://github.com/2010180016y-netizen/returnwise_az/commit/ac72192afdae33ef79dbeb58b5cab1b8f1a77fc6"
       ],
       "owner": "Engineering",
-      "notes": "GitHub Actions run 41597679544 passed all jobs on main push."
+      "notes": "Completed main CI 41611527619 verified 498 Node + 60 real browser tests. P1 has its own distinct PR and CI; no live release approved."
     },
     {
       "id": "F03",
