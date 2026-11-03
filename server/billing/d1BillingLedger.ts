@@ -158,6 +158,9 @@ export async function readD1Entitlement(
        WHERE e.tenant_id=? AND t.status='ACTIVE'`
   ).bind(tenantId).first<EntitlementRow>();
   if (!record) return { plan:'FREE', status:'UNPAID', periodEnd:null };
+  if (record.period_start > nowMs) {
+    return { plan:'FREE', status:'UNPAID', periodEnd:record.period_end };
+  }
   if (record.period_end <= nowMs) {
     return { plan:'FREE', status:'EXPIRED', periodEnd:record.period_end };
   }
