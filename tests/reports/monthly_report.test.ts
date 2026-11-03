@@ -25,6 +25,8 @@ import type { CaseRecord } from '../../server/cases/types';
 import type { UserSession } from '../../server/auth/types';
 import { AuthError } from '../../server/auth/types';
 
+const currentKstMonth = new Date(Date.now()+9*60*60*1000).toISOString().slice(0,7);
+
 describe('T37 | Monthly Report & Usage Quota Contract', () => {
   const dummySession: UserSession = {
     userId: 'user_test',
@@ -72,7 +74,7 @@ describe('T37 | Monthly Report & Usage Quota Contract', () => {
         });
       }
 
-      const summary = aggregateMonthlyReport('tenant_test', '2026-11', cases);
+      const summary = aggregateMonthlyReport('tenant_test', currentKstMonth, cases);
 
       // 1. 단건 합계와 월간 종합 합계의 정확한 일치성 확인
       assert.strictEqual(summary.totalCases, 10);
@@ -189,7 +191,7 @@ describe('T37 | Monthly Report & Usage Quota Contract', () => {
         },
       ];
 
-      const summary = aggregateMonthlyReport('tenant_test', '2026-11', cases);
+      const summary = aggregateMonthlyReport('tenant_test', currentKstMonth, cases);
       const csv = exportMonthlyReportCsv(summary);
 
       // 보수적 손실 방어 지표 확인
