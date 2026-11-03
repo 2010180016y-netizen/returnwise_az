@@ -1,0 +1,17 @@
+# S3 Cloudflare Worker configuration TEMPLATE ONLY.
+# Copy to a private wrangler.toml after review, fill in your D1 database ID,
+# and configure secrets out-of-band. This file is never auto-deployed.
+name = "returnwise-s3-sandbox"
+main = "server/worker/index.ts"
+compatibility_date = "2026-11-03"
+workers_dev = false
+
+[vars]
+BILLING_MODE = "disabled"
+S3_TEST_ONLY = "no"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "returnwise-sandbox"
+database_id = "REPLACE_WITH_REAL_D1_DATABASE_ID"
+migrations_dir = "db/migrations"
