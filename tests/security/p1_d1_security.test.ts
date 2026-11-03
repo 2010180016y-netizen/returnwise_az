@@ -199,6 +199,26 @@ describe('P1 D1 quota: verified plan, atomic accounting and replay defense',()=>
     }finally{s.db.close();}
   });
 
+  it('blocks forged tenant sessions and revoked session tokens even with active paid entitlement',async()=>{
+    const s=await seededQuota();
+    try {
+      await assert.rejects(
+        reserveTrustedBatchRows(s.db,{...s.ownerA,tenantId:'tenant_b'},'forged_tenant_0001',10,now),
+        (error:unknown)=>error instanceof D1QuotaError && error.code==='VERIFIED_SESSION_REQUIRED'
+      );
+      s.db.sqlite.prepare(
+        "UPDATE billing_sessions SET revoked_at=? WHERE session_hash=?"
+      ).run(now-1,s.ownerA.sessionHash);
+      await assert.rejects(
+        reserveTrustedBatchRows(s.db,s.ownerA,'revoked_token_0001',10,now),
+        (error:unknown)=>error instanceof D1QuotaError && error.code==='VERIFIED_SESSION_REQUIRED'
+      );
+      assert.equal((s.db.sqlite.prepare(
+        "SELECT COUNT(*) AS n FROM quota_reservations WHERE tenant_id='tenant_a'"
+      ).get() as {n:number}).n,0);
+    }finally{s.db.close();}
+  });
+
   it('HTTP exposes authenticated GET usage but no unchecked batch consumption route',async()=>{
     const s=await seededQuota();
     try{
