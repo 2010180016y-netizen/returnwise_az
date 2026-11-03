@@ -14,6 +14,7 @@ import { createD1BillingLedger, readD1Entitlement } from '../billing/d1BillingLe
 import { createTestTossPaymentLookup } from '../billing/tossPaymentLookup';
 import { confirmTrustedPayment } from '../billing/verifiedConfirmation';
 import { BillingSecurityError } from '../billing/verifiedBilling';
+import { reconcileSandboxPayments } from '../billing/reconciliation';
 
 export interface WorkerEnv {
   DB: D1DatabaseLike;
@@ -142,6 +143,20 @@ export default {
       }
       // Do not echo raw payment keys, credentials, or SQL error messages.
       return json({error:'INTERNAL_ERROR'},500);
+    }
+  },
+
+  async scheduled(_controller: unknown, env: WorkerEnv): Promise<void> {
+    // No schedule is enabled in the committed config template. This handler
+    // can only be used with explicit sandbox deployment configuration.
+    if (!enabled(env) || !env.TOSS_TEST_API_SECRET) return;
+    const lookup=createTestTossPaymentLookup({
+      apiSecretKey:env.TOSS_TEST_API_SECRET,mode:'test',
+    });
+    const result=await reconcileSandboxPayments(env.DB,lookup);
+    if (result.failed>0) {
+      // Non-PII generic failure for Workers error monitoring.
+      throw new Error('S3_RECONCILIATION_REQUIRES_RETRY');
     }
   },
 };
