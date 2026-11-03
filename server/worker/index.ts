@@ -15,6 +15,7 @@ import { createTestTossPaymentLookup } from '../billing/tossPaymentLookup';
 import { confirmTrustedPayment } from '../billing/verifiedConfirmation';
 import { BillingSecurityError } from '../billing/verifiedBilling';
 import { reconcileSandboxPayments } from '../billing/reconciliation';
+import { getTrustedQuotaUsage, D1QuotaError } from '../usage/d1Quota';
 
 export interface WorkerEnv {
   DB: D1DatabaseLike;
@@ -77,6 +78,13 @@ async function handleRequest(req: Request, env: WorkerEnv): Promise<Response> {
     return json({entitlement});
   }
 
+  // Trusted, read-only usage information. Reservation requires a verified
+  // server-side batch execution, which is deliberately not exposed by HTTP.
+  if(path==='/api/pro/quota' && req.method==='GET') {
+    const usage=await getTrustedQuotaUsage(env.DB,session);
+    return json({usage});
+  }
+
   if(path==='/api/pro/logout' && req.method==='POST') {
     await revokeAuthenticatedSession(env.DB,session);
     return json({ok:true});
@@ -135,6 +143,9 @@ export default {
       return await handleRequest(request,env);
     } catch (error) {
       if(error instanceof SessionAccessError) {
+        return json({error:error.code},error.statusCode);
+      }
+      if(error instanceof D1QuotaError) {
         return json({error:error.code},error.statusCode);
       }
       if(error instanceof BillingSecurityError) {
