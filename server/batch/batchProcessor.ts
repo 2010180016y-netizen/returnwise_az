@@ -5,7 +5,7 @@
  */
 import type { BatchRowInput, BatchRowResult, AttestedBatchScenario } from '../../src/features/batch/types';
 import { compareAlternatives } from '../../src/domain/compare';
-import type { DecisionFlags, ScenarioInput } from '../../src/domain/types';
+import type { ScenarioInput } from '../../src/domain/types';
 import { serializeSafeCsv } from './csvSanitizer';
 
 const VALID_MARKETS = new Set(['SMARTSTORE','COUPANG','INDEPENDENT']);
