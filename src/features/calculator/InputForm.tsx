@@ -300,6 +300,25 @@ export const InputForm: React.FC<InputFormProps> = ({
             <label className="rw-flex" style={{ fontSize: '0.8125rem', cursor: 'pointer' }}>
               <input
                 type="checkbox"
+                checked={Boolean(flags.policyReviewed)}
+                onChange={(e) => onUpdateFlag('policyReviewed', e.target.checked)}
+                style={{ width: 18, height: 18, flexShrink: 0 }}
+              />
+              <span><strong>[마켓 정책 확인]</strong> 해당 판매 플랫폼의 최신 반품·환급·회수 정책을 직접 확인했습니다. 미확인 시 추천하지 않습니다.</span>
+            </label>
+            <label className="rw-flex" style={{ fontSize: '0.8125rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={Boolean(flags.rightsReviewed)}
+                onChange={(e) => onUpdateFlag('rightsReviewed', e.target.checked)}
+                style={{ width: 18, height: 18, flexShrink: 0 }}
+              />
+              <span><strong>[소비자 권리 확인]</strong> 해당 건의 법정 청약철회·환급 권리를 직접 확인했습니다. 미확인 시 추천하지 않습니다.</span>
+            </label>
+
+            <label className="rw-flex" style={{ fontSize: '0.8125rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
                 checked={flags.voluntaryAgreementConfirmed}
                 onChange={(e) => onUpdateFlag('voluntaryAgreementConfirmed', e.target.checked)}
                 style={{ width: 16, height: 16 }}
