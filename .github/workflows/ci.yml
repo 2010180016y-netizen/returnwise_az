@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    # Every PR, including stacked reviews, must run the full quality gate.
 
 # Minimal Permissions Policy (Principle of Least Privilege)
 permissions:
