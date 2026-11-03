@@ -1,6 +1,6 @@
 /**
- * Toss Payments webhook signature verification.
- * Docs: https://docs.tosspayments.com/reference/using-api/webhook-events
+ * Toss Payments webhook signature helper for SIGNED payout/seller events ONLY.
+ * WARNING: PAYMENT_STATUS_CHANGED does not include this signature header.\n * Never use this helper as a production payment-status authentication gate.\n * Docs: https://docs.tosspayments.com/reference/using-api/webhook-events
  *
  * HMAC SHA-256(UTF8(rawBody + ':' + transmissionTime), webhook SECURITY key).
  * A valid header has one or more comma-separated 'v1:<base64>' values.

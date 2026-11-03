@@ -9,7 +9,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "node scripts/run-tests.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:worker": "node scripts/check-s3-worker.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",
