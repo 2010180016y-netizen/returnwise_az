@@ -58,6 +58,11 @@ class MemoryLedger implements BillingLedger {
   }
   async applyVerified(commit: VerifiedCommit): Promise<'APPLIED' | 'DUPLICATE' | 'STALE'> {
     if (this.events.has(commit.eventKey)) return 'DUPLICATE';
+    if (this.commits.some(x =>
+      x.orderId === commit.orderId &&
+      x.paymentKey === commit.paymentKey &&
+      x.status === commit.status
+    )) return 'DUPLICATE';
     const priorForOrder = this.commits.filter(x => x.orderId === commit.orderId);
     const prior = priorForOrder[priorForOrder.length - 1];
     if (prior && (prior.occurredAt > commit.occurredAt ||
@@ -157,6 +162,27 @@ describe('S2 | trusted payment / merchant / order / tenant binding', () => {
     assert.equal((await processVerifiedBillingWebhook(signed, deps)).outcome, 'DUPLICATE');
     assert.equal(ledger.commits.length, 1);
     assert.equal(ledger.commits[0].periodEnd, order.periodEnd);
+  });
+
+  it('different event createdAt cannot extend one verified payment twice', async () => {
+    const { ledger, deps } = testDeps();
+    const first = envelope();
+    const second = envelope({ ...eventBase, createdAt: '2026-11-03T04:32:00Z' });
+    assert.equal((await processVerifiedBillingWebhook(first, deps)).outcome, 'APPLIED');
+    assert.equal((await processVerifiedBillingWebhook(second, deps)).outcome, 'DUPLICATE');
+    assert.equal(ledger.commits.length, 1);
+  });
+
+  it('concurrent duplicate notifications have one atomic effect', async () => {
+    const { ledger, deps } = testDeps();
+    const signed = envelope();
+    const results = await Promise.all([
+      processVerifiedBillingWebhook(signed, deps),
+      processVerifiedBillingWebhook(signed, deps),
+      processVerifiedBillingWebhook(signed, deps),
+    ]);
+    assert.equal(results.filter(r => r.outcome === 'APPLIED').length, 1);
+    assert.equal(ledger.commits.length, 1);
   });
 
   it('rejects invalid signatures before any provider request or datastore access', async () => {
