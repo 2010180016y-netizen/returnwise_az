@@ -1,3 +1,5 @@
+> **P1 감사 정정 (2026-11-03):** 아래 과거 보고서에 인용된 `tests/s2/webhook.test.ts`, `tests/s2/binding.test.ts`, `tests/s2/lookup.test.ts`, `server/billing/tossWebhook.ts`는 현재 저장소에 존재하지 않습니다. 실제 테스트는 `tests/billing/webhook_security.test.ts`(S2 합성 서명 테스트) 및 `tests/s3/d1_transaction.test.ts`(D1/서버 조회 모의실험)입니다. 이 결과는 실제 토스 테스트 상점·원격 D1·실결제 조회 성공의 증빙이 아닙니다. 일반 `PAYMENT_STATUS_CHANGED` 이벤트는 합성 HMAC 웹훅 코드로 인증할 수 없습니다. **P06은 PENDING**, 실결제는 비활성 유지합니다.
+
 # S6-14: 토스페이먼츠 웹훅 보안·양방향 대조 및 결제 무결성 검증 보고서
 
 - **작성 기준**: 2026-11-03 17:30 KST

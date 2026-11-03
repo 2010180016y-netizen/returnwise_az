@@ -24,6 +24,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Verify release evidence commit SHAs against actual git ancestry
 
       - name: Setup Node.js 20.x with npm cache
         uses: actions/setup-node@v4
@@ -74,6 +76,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Verify release evidence commit SHAs against actual git ancestry
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

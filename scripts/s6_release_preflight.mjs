@@ -12,6 +12,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
 const manifestPath = path.resolve('docs/release/S6_GATE_MANIFEST.json');
 const dist = path.resolve('dist');
@@ -38,6 +39,36 @@ export function validateManifest(m) {
       check(gate.evidence.length>0,'PASS has no supporting evidence '+gate.id);
       check(gate.evidence.every(e=>typeof e==='string'&&e.trim().length>8),
         'invalid proof reference '+gate.id);
+      check(gate.evidence.some(e=>/^https:\/\//.test(e)),
+        'PASS has no independently openable evidence URL '+gate.id);
+      if (gate.id==='F01'||gate.id==='F02') {
+        const prefix='https://github.com/2010180016y-netizen/returnwise_az/';
+        check(gate.evidence.every(e=>e.startsWith(prefix) &&
+          /^(?:pull\/\d+|actions\/runs\/\d+|commit\/[a-f0-9]{40})$/.test(e.slice(prefix.length))),
+          'unverifiable GitHub provenance '+gate.id);
+        const proofs=gate.evidence.filter(e=>e.startsWith(prefix+'commit/'));
+        check(proofs.length>0,'no complete commit SHA in '+gate.id);
+        if (gate.id==='F01') {
+          check([1,2,3,4,5,6].every(n=>
+            gate.evidence.includes(prefix+'pull/'+n)),
+            'historical merged PR references incomplete');
+        } else {
+          check(gate.evidence.some(e=>e.startsWith(prefix+'actions/runs/')),
+            'verified CI URL missing');
+        }
+        if (process.env.GITHUB_ACTIONS==='true') {
+          // Actions checkout MUST fetch history. Reject forged/nonexistent
+          // SHAs instead of trusting an arbitrary line in the manifest.
+          for(const proof of proofs) {
+            const sha=proof.slice((prefix+'commit/').length);
+            try {
+              execFileSync('git',['cat-file','-e',sha+'^{commit}'],{stdio:'pipe'});
+            } catch {
+              check(false,'provenance commit does not exist in Git history: '+sha);
+            }
+          }
+        }
+      }
     }
     byId.set(gate.id,gate);
   }
