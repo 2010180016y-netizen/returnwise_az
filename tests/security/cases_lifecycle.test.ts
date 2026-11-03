@@ -340,4 +340,60 @@ describe('T35 | Cases Lifecycle, Retention, Deletion & Backup Contract', () => {
       assert.ok(sql.includes('DROP INDEX IF EXISTS idx_cases_tenant_created;'));
     });
   });
+
+  describe('P1 | rollback, deletion and backup integrity',()=>{
+    const goodInput={
+      market:'SMARTSTORE',itemPrice:30000,initialShipping:3000,
+      returnShipping:3500,commissionRate:5.5,bestOptionCode:'C01',
+      cashOutflow:10000,economicCost:9000,policyVerified:true,
+    };
+
+    it('restoring an old snapshot cannot resurrect a soft-deleted case',()=>{
+      const saved=caseService.createCase(sessionTenantA,{
+        ...goodInput,idempotencyKey:'restore_block_key_a',
+      });
+      const snapshot=caseService.createBackupSnapshot(sessionTenantA);
+      caseService.deleteCase(sessionTenantA,saved.id);
+      const r=caseService.restoreFromBackupSnapshot(sessionTenantA,snapshot);
+      assert.equal(r.restoredCount,0);
+      assert.throws(()=>caseService.getCaseById(sessionTenantA,saved.id),
+        (e:unknown)=>e instanceof AuthError && e.statusCode===404);
+      assert.throws(()=>caseService.createCase(sessionTenantA,{
+        ...goodInput,idempotencyKey:'restore_block_key_a',
+      }),(e:unknown)=>e instanceof AuthError && e.code==='IDEMPOTENCY_KEY_DELETED');
+    });
+
+    it('hard-deleted cases remain removed even after simulated storage clear',()=>{
+      const saved=caseService.createCase(sessionTenantA,goodInput);
+      const snapshot=caseService.createBackupSnapshot(sessionTenantA);
+      caseService.deleteCase(sessionTenantA,saved.id,true);
+      caseService.clear();
+      const r=caseService.restoreFromBackupSnapshot(sessionTenantA,snapshot);
+      assert.equal(r.restoredCount,0);
+      assert.equal(caseService.listCases(sessionTenantA).length,0);
+    });
+
+    it('restoration never inherits a stale policy verification or computed saving',()=>{
+      caseService.createCase(sessionTenantA,{
+        ...goodInput,baselineEconomicCost:13000,
+      });
+      const snapshot=caseService.createBackupSnapshot(sessionTenantA);
+      caseService.clear();
+      const restored=caseService.restoreFromBackupSnapshot(sessionTenantA,snapshot);
+      assert.equal(restored.restoredCount,1);
+      const data=caseService.listCases(sessionTenantA)[0];
+      assert.equal(data.policyVerified,false);
+      assert.equal(data.bestOptionCode,'REVIEW_REQUIRED');
+      assert.equal(data.baselineEconomicCost,undefined);
+    });
+
+    it('a same-tenant snapshot containing a foreign case is rejected',()=>{
+      const saved=caseService.createCase(sessionTenantA,goodInput);
+      const snapshot=caseService.createBackupSnapshot(sessionTenantA);
+      snapshot.cases[0]={...saved,tenantId:'tenant_beta'};
+      assert.throws(()=>caseService.restoreFromBackupSnapshot(sessionTenantA,snapshot),
+        (e:unknown)=>e instanceof AuthError && e.code==='CROSS_TENANT_RESTORE_FORBIDDEN');
+    });
+  });
+
 });
