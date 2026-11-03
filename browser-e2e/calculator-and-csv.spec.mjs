@@ -57,10 +57,12 @@ test('invalid required amount is announced and cannot produce recommendation', a
   await expect(page.getByText('최저비용 추천 (1위)', {exact:true})).toHaveCount(0);
 });
 
-test('320-to-mobile viewport contains no document-level horizontal overflow', async ({page, isMobile}) => {
+test('320-to-mobile viewport contains no document-level horizontal overflow', async ({page}) => {
   // Pixel 5 emulation already supplies a mobile viewport; explicitly
   // exercise the minimum 320px layout for desktop browser contexts.
-  if (!isMobile) await page.setViewportSize({width:320,height:760});
+  if (test.info().project.name === 'chromium-desktop') {
+    await page.setViewportSize({width:320,height:760});
+  }
   const viewport = await page.evaluate(() => ({
     inner: window.innerWidth,
     page: document.documentElement.scrollWidth,
