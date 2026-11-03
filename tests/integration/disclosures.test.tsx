@@ -65,7 +65,7 @@ describe('T18 | FAQ, Disclosures & Operator Policy Integration Contract', () => 
     it('개인정보 처리방침에 No-PII 및 100% 브라우저 로컬 연산이 명시되어야 한다', () => {
       assert.ok(PRIVACY_POLICY_SUMMARY.includes('개인 식별 정보(PII) 미수집 원칙'));
       assert.ok(PRIVACY_POLICY_SUMMARY.includes('100% 브라우저 로컬 연산'));
-      assert.ok(PRIVACY_POLICY_SUMMARY.includes('제3자 트래커 및 쿠키 미사용'));
+      assert.ok(PRIVACY_POLICY_SUMMARY.includes('현재 무료 버전의 별도 추적 코드 없음'));
     });
 
     it('이용 가이드는 4단계로 구성되어야 한다', () => {
