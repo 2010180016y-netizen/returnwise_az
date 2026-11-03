@@ -19,6 +19,17 @@ import {
 import { sanitizeCell, serializeSafeCsv } from '../../server/batch/csvSanitizer';
 
 describe('T36 | CSV Batch Calculation & Security Contract', () => {
+  it('policy details missing: CSV must never auto-recommend partial refund or claim fictitious savings', () => {
+    const { rows } = parseCsvText('판매가,초기배송비,회수배송비,수수료율,마켓\\n30000,3000,3500,5.5,SMARTSTORE');
+    const result = processBatchRows(rows).results[0];
+    assert.equal(result.status, 'REVIEW_REQUIRED');
+    assert.equal(result.bestOptionCode, 'REVIEW_REQUIRED');
+    assert.equal(result.savingsVsBaseline, null);
+    const exportCsv = generateBatchExportCsv([result]);
+    assert.ok(exportCsv.includes('REVIEW_REQUIRED'));
+    assert.ok(!exportCsv.includes(',0,0,0,SUCCESS'));
+  });
+
   describe('1. 정상 100행 일괄 계산 정확도 및 성능 검증', () => {
     it('100행의 정상 CSV를 파싱하고 정확하게 일괄 계산해야 한다 (<100ms)', () => {
       const header = '판매가,초기배송비,회수배송비,수수료율,마켓';
@@ -42,10 +53,12 @@ describe('T36 | CSV Batch Calculation & Security Contract', () => {
       assert.ok(executionTimeMs < 200, `100행 계산 속도는 200ms 미만이어야 합니다: ${executionTimeMs}ms`);
 
       for (const res of results) {
-        assert.strictEqual(res.status, 'SUCCESS');
-        assert.ok(['C01', 'C02', 'C03', 'C15'].includes(res.bestOptionCode));
-        assert.ok(res.cashOutflow > 0);
-        assert.ok(res.economicCost > 0);
+        assert.strictEqual(res.status, 'REVIEW_REQUIRED');
+        assert.equal(res.bestOptionCode, 'REVIEW_REQUIRED');
+        assert.equal(res.cashOutflow, null);
+        assert.equal(res.economicCost, null);
+        assert.equal(res.savingsVsBaseline, null);
+        assert.match(res.errorMessage ?? '', /고객 동의/);
       }
     });
   });
