@@ -75,6 +75,12 @@ export class CaseService {
       bestOptionCode: input.policyVerified === true ? input.bestOptionCode : 'REVIEW_REQUIRED',
       cashOutflow: input.cashOutflow,
       economicCost: input.economicCost,
+      // A missing/invalid baseline must remain unknown, never guessed later.
+      baselineEconomicCost: input.policyVerified === true &&
+        typeof input.baselineEconomicCost === 'number' &&
+        Number.isSafeInteger(input.baselineEconomicCost) &&
+        input.baselineEconomicCost >= input.economicCost
+          ? input.baselineEconomicCost : undefined,
       policyVerified: input.policyVerified === true,
       retentionExpiresAt,
       isDeleted: false,
