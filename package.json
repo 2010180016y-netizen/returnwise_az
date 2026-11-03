@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "node scripts/run-tests.mjs",
     "preview": "vite preview",
-    "check:worker": "node scripts/check-s3-worker.mjs"
+    "check:worker": "node scripts/check-s3-worker.mjs",
+    "test:browser": "playwright test --config=playwright.config.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

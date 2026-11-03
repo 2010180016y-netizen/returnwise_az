@@ -256,7 +256,7 @@ export const ResultView: React.FC<ResultViewProps> = ({
       </div>
 
       {/* 5. Dual-Column Comprehensive Comparison Summary Table (수치 기반 표) */}
-      <div className="rw-card" style={{ padding: '1rem', overflowX: 'auto' }}>
+      <div className="rw-card" style={{ padding: '1rem', overflowX: 'auto' }} tabIndex={0} role="region" aria-label="대안별 비용 비교표 (키보드로 가로 스크롤 가능)">
         <div style={{ marginBottom: '0.75rem' }}>
           <strong style={{ fontSize: '0.9375rem', color: 'var(--color-slate-900)' }}>
             📋 4대 처리 방식 지표 대조표 (현금 지출 vs 순경제비용 동시 비교)

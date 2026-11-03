@@ -7,6 +7,7 @@ import React, { useState } from 'react';
 import { useCalculatorState } from './useCalculatorState';
 import { InputForm } from './InputForm';
 import { ResultView } from './ResultView';
+import { LocalCsvPreview } from './LocalCsvPreview';
 import { Actions } from './Actions';
 import {
   CardHeader,
@@ -51,7 +52,7 @@ export const CalculatorPage: React.FC = () => {
   return (
     <div className="rw-stack-lg" style={{ paddingBottom: '4rem' }}>
       {/* 1. Header & Navigation */}
-      <header className="rw-flex-between" style={{ borderBottom: '1px solid var(--color-slate-200)', paddingBottom: '1rem' }}>
+      <header className="rw-flex-between rw-page-header" style={{ borderBottom: '1px solid var(--color-slate-200)', paddingBottom: '1rem' }}>
         <div>
           <div className="rw-flex" style={{ gap: '0.5rem' }}>
             <span style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--color-primary-600)' }}>
@@ -63,11 +64,12 @@ export const CalculatorPage: React.FC = () => {
             소규모 이커머스 판매자를 위한 반품·환불·교환 의사결정 계산기
           </span>
         </div>
-        <nav className="rw-flex" style={{ gap: '0.75rem', fontSize: '0.875rem', flexWrap: 'wrap' }}>
+        <nav aria-label="페이지 섹션 이동" className="rw-flex" style={{ gap: '0.75rem', fontSize: '0.875rem', flexWrap: 'wrap' }}>
           <a href="#how-to-use" style={{ color: 'var(--color-slate-600)', textDecoration: 'none' }}>사용 방법</a>
           <a href="#step-context" style={{ color: 'var(--color-slate-600)', textDecoration: 'none' }}>1. 상황 확인</a>
           <a href="#step-inputs" style={{ color: 'var(--color-slate-600)', textDecoration: 'none' }}>2. 비용 입력</a>
           <a href="#step-results" style={{ color: 'var(--color-slate-600)', textDecoration: 'none' }}>3. 대안 비교</a>
+          <a href="#batch-preview" style={{ color: 'var(--color-slate-600)', textDecoration: 'none' }}>CSV 미리보기</a>
           <a href="#faq" style={{ color: 'var(--color-slate-600)', textDecoration: 'none' }}>FAQ</a>
           <a href="#operator" style={{ color: 'var(--color-slate-600)', textDecoration: 'none' }}>고지·운영자</a>
         </nav>
@@ -161,6 +163,9 @@ export const CalculatorPage: React.FC = () => {
         expandedBreakdown={expandedBreakdown}
         onToggleBreakdown={toggleBreakdown}
       />
+
+      {/* S5: client-only CSV validation with no network or persistent upload. */}
+      <LocalCsvPreview />
 
       {/* 5. Section: 자주 묻는 질문 (FAQ) 및 전자상거래법 안내 (T18) */}
       <section id="faq" className="rw-card">
