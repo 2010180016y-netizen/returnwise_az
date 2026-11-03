@@ -29,6 +29,15 @@ async function buildApp() {
     throw new Error('BUILD_ENTRY_NOT_FOUND: index.html is missing the source entry script.');
   }
   html = html.replace(sourceEntry, '<script type="module" src="/assets/index.js"></script>');
+  // esbuild extracts CSS imported by src/main.tsx to a sibling stylesheet.
+  // Without an explicit link the production HTML renders entirely unstyled.
+  const cssPath = path.join(distDir, 'assets', 'index.css');
+  if (!fs.existsSync(cssPath)) {
+    throw new Error('BUILD_CSS_MISSING: expected extracted production stylesheet.');
+  }
+  const headEnd = '</head>';
+  if (!html.includes(headEnd)) throw new Error('BUILD_HEAD_NOT_FOUND');
+  html = html.replace(headEnd, '    <link rel="stylesheet" href="/assets/index.css" />\n  ' + headEnd);
   fs.writeFileSync('dist/index.html', html, 'utf-8');
 
   // 3. Copy public files if any
