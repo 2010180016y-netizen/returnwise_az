@@ -104,12 +104,13 @@ export async function reserveTrustedBatchRows(
     }
   } catch(error) {
     const message=error instanceof Error?error.message:'';
-    if (/QUOTA_EXCEEDED/.test(message)) {
-      throw new D1QuotaError('QUOTA_EXCEEDED',429);
-    }
-    if (!/UNIQUE constraint failed|PRIMARY KEY constraint failed|SQLITE_CONSTRAINT/i.test(message)) {
-      throw error;
-    }
+    // SQLite BEFORE INSERT quota triggers run before UNIQUE constraints.
+    // Replayed requests may therefore receive QUOTA_EXCEEDED even though
+    // they were already charged once. Read the authoritative reservation to
+    // distinguish an idempotent replay from a genuinely over-limit request.
+    const wasQuotaLimit=/QUOTA_EXCEEDED/.test(message);
+    const wasUnique=/UNIQUE constraint failed|PRIMARY KEY constraint failed|SQLITE_CONSTRAINT/i.test(message);
+    if (!wasQuotaLimit && !wasUnique) throw error;
     // A same-tenant replay must not consume rows twice. Different row count,
     // month or plan under the same requestId is a hard conflict.
     const previous=await db.prepare(
@@ -117,8 +118,12 @@ export async function reserveTrustedBatchRows(
        WHERE tenant_id=? AND request_id=?`
     ).bind(session.tenantId,requestId)
       .first<{month:string;row_count:number;plan:string}>();
-    if (!previous || previous.month!==month ||
-        previous.row_count!==rowCount || previous.plan!==plan) {
+    if (!previous) {
+      if (wasQuotaLimit) throw new D1QuotaError('QUOTA_EXCEEDED',429);
+      throw error;
+    }
+    if (previous.month!==month || previous.row_count!==rowCount ||
+        previous.plan!==plan) {
       throw new D1QuotaError('QUOTA_REPLAY_CONFLICT',409);
     }
     result='DUPLICATE';
