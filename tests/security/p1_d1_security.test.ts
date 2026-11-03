@@ -103,6 +103,7 @@ describe('P1 D1 schema: tenant-isolated cases, fail-closed review and durable de
       insertCase(db.sqlite,'hard','org_a','hardkey');
       db.sqlite.prepare('DELETE FROM cases WHERE id=?').run('hard');
       assert.throws(()=>insertCase(db.sqlite,'hard','org_a','hardkey'),/CASE_TOMBSTONED/);
+      assert.throws(()=>insertCase(db.sqlite,'new_case_id','org_a','hardkey'),/CASE_TOMBSTONED/);
       assert.equal((db.sqlite.prepare(
         'SELECT COUNT(*) AS n FROM case_tombstones WHERE tenant_id=?'
       ).get('org_a') as {n:number}).n,2);
