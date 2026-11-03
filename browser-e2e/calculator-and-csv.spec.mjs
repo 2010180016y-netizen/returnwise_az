@@ -103,7 +103,7 @@ test('copy action gives an accessible success or manual fallback without sharing
   const fallback = page.getByRole('dialog', {name:/요약 리포트 직접 복사/});
   await expect(success.or(fallback).first()).toBeVisible();
   if (await fallback.isVisible()) {
-    await expect(fallback.getByRole('textbox')).toContainText('ReturnWise');
+    await expect(fallback.getByRole('textbox')).toHaveValue(/ReturnWise/);
     await fallback.getByRole('button', {name:'닫기'}).click();
     await expect(fallback).toHaveCount(0);
   }
