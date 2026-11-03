@@ -94,7 +94,7 @@ export function aggregateMonthlyReport(
     else verifiedSavingSum=addWon(verifiedSavingSum,savings);
 
     const market=c.market || 'ETC';
-    if(!Object.hasOwn(byMarket,market)) {
+    if(!Object.prototype.hasOwnProperty.call(byMarket,market)) {
       byMarket[market]={
         count:0,totalCashOutflow:0,totalEconomicCost:0,
         totalLossMitigated:0,savingsUnverifiedCases:0,
@@ -112,7 +112,7 @@ export function aggregateMonthlyReport(
     }
 
     const option=c.bestOptionCode || 'REVIEW_REQUIRED';
-    if(!Object.hasOwn(byBestOption,option)) {
+    if(!Object.prototype.hasOwnProperty.call(byBestOption,option)) {
       byBestOption[option]={
         count:0,code:option,name:OPTION_NAMES[option]||'기타',
         totalCashOutflow:0,totalEconomicCost:0,
