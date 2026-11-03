@@ -80,6 +80,35 @@ test('320-to-mobile viewport contains no document-level horizontal overflow', as
   await expect(page.getByRole('link', {name:'CSV 미리보기'})).toBeVisible();
 });
 
+test('local-only seller defaults require consent, persist intentionally and can be deleted', async ({page}) => {
+  const input = page.locator('#field-reverse-shipping-seller');
+  await page.getByRole('checkbox', {name:/판매자 기본값/}).check();
+  await page.getByRole('button', {name:'기본값 저장'}).click();
+  await expect(page.getByText(/브라우저에 저장되었습니다/)).toBeVisible();
+  await input.fill('7777');
+  await expect(input).toHaveValue('7,777');
+  await page.getByRole('button', {name:'저장값 불러오기'}).click();
+  await expect(input).toHaveValue('3,500');
+  await page.reload();
+  await page.locator('#field-reverse-shipping-seller').fill('7777');
+  await page.getByRole('button', {name:'저장값 불러오기'}).click();
+  await expect(page.locator('#field-reverse-shipping-seller')).toHaveValue('3,500');
+  await page.getByRole('button', {name:'저장값 삭제'}).click();
+  await expect(page.getByText(/완전히 삭제되었습니다/)).toBeVisible();
+});
+
+test('copy action gives an accessible success or manual fallback without sharing orders', async ({page}) => {
+  await page.getByRole('button', {name:/익명 요약 리포트 복사/}).click();
+  const success = page.getByText(/클립보드에 복사되었습니다/);
+  const fallback = page.getByRole('dialog', {name:/요약 리포트 직접 복사/});
+  await expect(success.or(fallback).first()).toBeVisible();
+  if (await fallback.isVisible()) {
+    await expect(fallback.getByRole('textbox')).toContainText('ReturnWise');
+    await fallback.getByRole('button', {name:'닫기'}).click();
+    await expect(fallback).toHaveCount(0);
+  }
+});
+
 test('CSV browser upload: invalid row is shown without fake cost and result downloads', async ({page}) => {
   await uploadCsv(page, CSV_MINIMAL);
   const preview = page.locator('#batch-preview');
