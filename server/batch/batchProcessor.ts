@@ -92,7 +92,7 @@ export function processBatchRows(
     }
     if(!row.attestedScenario) {
       results.push(resultRow(row,'REVIEW_REQUIRED',
-        '고객 의사·마켓 정책·법정 권리 및 모든 실제 비용 근거를 확인해야 합니다.'));
+        '고객 동의·마켓 정책·법정 권리 및 모든 실제 비용 근거를 확인해야 합니다.'));
       continue;
     }
     if(!attestationIsComplete(row,row.attestedScenario)) {
