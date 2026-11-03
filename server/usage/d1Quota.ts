@@ -33,11 +33,22 @@ function kstMonth(nowMs:number):string {
   return new Date(nowMs+9*60*60*1000).toISOString().slice(0,7);
 }
 
-function assertSession(session:ServerSession):void {
+async function assertSession(db:D1DatabaseLike,session:ServerSession,nowMs:number):Promise<void> {
   if (!session?.tenantId || !session?.userId || !session?.sessionHash ||
       (session.role!=='OWNER' && session.role!=='MEMBER')) {
     throw new D1QuotaError('VERIFIED_SESSION_REQUIRED',403);
   }
+  const proof=await db.prepare(
+    `SELECT s.session_hash FROM billing_sessions AS s
+     JOIN users AS u ON u.id=s.user_id AND u.tenant_id=s.tenant_id
+     JOIN tenants AS t ON t.id=s.tenant_id
+     WHERE s.session_hash=? AND s.user_id=? AND s.tenant_id=?
+       AND s.revoked_at IS NULL AND s.expires_at>?
+       AND u.role=? AND t.status='ACTIVE'`
+  ).bind(
+    session.sessionHash,session.userId,session.tenantId,nowMs,session.role
+  ).first<{session_hash:string}>();
+  if(!proof) throw new D1QuotaError('VERIFIED_SESSION_REQUIRED',403);
 }
 
 async function trustedPlan(db:D1DatabaseLike,tenantId:string,nowMs:number) {
@@ -51,7 +62,7 @@ async function trustedPlan(db:D1DatabaseLike,tenantId:string,nowMs:number) {
 export async function getTrustedQuotaUsage(
   db:D1DatabaseLike,session:ServerSession,nowMs:number=Date.now()
 ):Promise<{month:string;plan:'STARTER'|'PRO';usedRows:number;limitRows:number}> {
-  assertSession(session);
+  await assertSession(db,session,nowMs);
   const month=kstMonth(nowMs);
   const plan=await trustedPlan(db,session.tenantId,nowMs);
   const row=await db.prepare(
@@ -64,7 +75,7 @@ export async function reserveTrustedBatchRows(
   db:D1DatabaseLike,session:ServerSession,
   requestId:string,rowCount:number,nowMs:number=Date.now()
 ):Promise<{outcome:'RESERVED'|'DUPLICATE';usedRows:number;limitRows:number;month:string}> {
-  assertSession(session);
+  await assertSession(db,session,nowMs);
   const month=kstMonth(nowMs);
   if(typeof requestId!=='string' || !/^[A-Za-z0-9_-]{12,120}$/.test(requestId) ||
      !Number.isSafeInteger(rowCount) || rowCount<1 || rowCount>MAX_BATCH_ROWS) {
