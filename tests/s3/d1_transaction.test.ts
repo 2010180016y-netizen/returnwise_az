@@ -209,7 +209,7 @@ describe('S3 | D1-backed session and tenant security',()=>{
     const s=await setup();
     try{
       s.db.sqlite.prepare('UPDATE users SET role=? WHERE id=?').run('MEMBER','owner_a');
-      const member=await authenticateBearer(s.db,'Bearer '+s.bearerA');
+      const member=await authenticateBearer(s.db,'Bearer '+s.bearerA);
       assert.throws(()=>requireOwner(member),/OWNER_ONLY/);
       await assert.rejects(
         confirmTrustedPayment(s.order.orderId,key,member,{
