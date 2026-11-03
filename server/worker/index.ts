@@ -87,7 +87,7 @@ async function handleRequest(req: Request, env: WorkerEnv): Promise<Response> {
     if(access.plan==='FREE') return json({error:'PRO_REQUIRED'},403);
     const {results}=await env.DB.prepare(
       `SELECT id,market,item_price,initial_shipping,return_shipping,
-        commission_rate,best_option_code,cash_outflow,economic_cost,created_at
+        commission_rate,best_option_code,cash_outflow,economic_cost,baseline_economic_cost,created_at
         FROM cases
         WHERE tenant_id=? AND is_deleted=0 AND retention_expires_at>?
         ORDER BY created_at DESC LIMIT 50`
