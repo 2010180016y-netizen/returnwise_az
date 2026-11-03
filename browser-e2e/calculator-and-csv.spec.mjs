@@ -68,7 +68,8 @@ test('invalid required amount is announced and cannot produce recommendation', a
 test('320-to-mobile viewport contains no document-level horizontal overflow', async ({page}) => {
   // Pixel 5 emulation already supplies a mobile viewport; explicitly
   // exercise the minimum 320px layout for desktop browser contexts.
-  if (test.info().project.name === 'chromium-desktop') {
+  if (!test.info().project.name.includes('mobile')) {
+    // Verify *every* desktop browser engine at the 320px minimum viewport.
     await page.setViewportSize({width:320,height:760});
   }
   const viewport = await page.evaluate(() => ({
