@@ -146,7 +146,7 @@ export function aggregateMonthlyReport(
 export function exportMonthlyReportCsv(summary: MonthlyReportSummary): string {
   const headers=[
     '지표구분','항목명','건수','총추가현금지출(원)','총순경제손실(원)',
-    '검증된 기준안 대비 절감추정액(원)','절감액 근거 미확인 건수',
+    '검증된 기준안 대비 손실절감액 추정(원)','절감액 근거 미확인 건수',
   ];
   const display=(value:number|null):number|string=>
     value===null?'근거 미확인':value;
