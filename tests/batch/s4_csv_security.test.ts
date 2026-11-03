@@ -223,6 +223,8 @@ describe('S4 | explicit evidence only, using existing legal and financial engine
   it('buyer-requested exchange is never ranked against a refund group',()=>{
     const row=[...baseEvidence];row[12]='EXCHANGE';
     const result=importEvidence(row,'교환원가,교환출고비,교환동의','1200,800,YES');
+    assert.equal(result.results[0].status,'REVIEW_REQUIRED');
+    assert.equal(result.results[0].economicCost,null);
     assert.notEqual(result.results[0].bestOptionCode,'C15');
   });
 
