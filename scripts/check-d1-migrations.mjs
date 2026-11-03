@@ -13,6 +13,7 @@ const expected = [
   '0002_cases_schema.sql',
   '0003_s3_billing_persistence.sql',
   '0004_billing_reconciliation_cursor.sql',
+  '0005_p1_tenant_cases_quota.sql',
 ];
 const actual = fs.readdirSync(dirname)
   .filter(name => name.toLowerCase().endsWith('.sql')).sort();
@@ -55,6 +56,23 @@ try {
     .map(row => row.name);
   requireSafe(caseColumns.includes('baseline_economic_cost'),
     'verified report reference field missing');
+  const flags = db.prepare("PRAGMA table_info('cases')").all();
+  const policy = flags.find(row => row.name === 'policy_verified');
+  requireSafe(String(policy?.dflt_value) === '0',
+    'policy verification must fail closed by default');
+  const casesSql = db.prepare(
+    "SELECT sql FROM sqlite_master WHERE type='table' AND name='cases'"
+  ).get()?.sql ?? '';
+  requireSafe(/UNIQUE\s*\(\s*tenant_id\s*,\s*idempotency_key\s*\)/i.test(casesSql),
+    'idempotency must be unique within tenant, not globally');
+  requireSafe(tables.has('cases_legacy_p1') && tables.has('case_tombstones') &&
+    tables.has('quota_usage') && tables.has('quota_reservations'),
+    'legacy preservation / deletion log / quota tables missing');
+  const triggers = db.prepare(
+    "SELECT COUNT(*) AS total FROM sqlite_master WHERE type='trigger' AND name LIKE 'quota_p1_%'"
+  ).get();
+  requireSafe(triggers.total >= 2, 'atomic quota triggers missing');
+
   requireSafe(fs.existsSync(path.resolve('db/manual_rollback/0002_cases_rollback.sql')),
     'manual rollback must be preserved outside automatic directory');
 
