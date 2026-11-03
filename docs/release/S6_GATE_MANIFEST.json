@@ -26,10 +26,18 @@
         "PRO"
       ],
       "name": "S1-S6 PRs reviewed and merged in dependency order",
-      "status": "BLOCKED",
-      "evidence": [],
+      "status": "PASS",
+      "evidence": [
+        "https://github.com/2010180016y-netizen/returnwise_az/pull/1",
+        "https://github.com/2010180016y-netizen/returnwise_az/pull/2",
+        "https://github.com/2010180016y-netizen/returnwise_az/pull/3",
+        "https://github.com/2010180016y-netizen/returnwise_az/pull/4",
+        "https://github.com/2010180016y-netizen/returnwise_az/pull/5",
+        "https://github.com/2010180016y-netizen/returnwise_az/pull/6",
+        "commit 7e5d704d99c43ebf33a87ec493d8b375b472e3ea"
+      ],
       "owner": "Repository maintainer",
-      "notes": "S1-S5 all open draft; S6 not reviewed."
+      "notes": "PRs #1-#6 all merged cleanly into main at commit 7e5d704."
     },
     {
       "id": "F02",
@@ -38,9 +46,14 @@
         "PRO"
       ],
       "name": "Integrated main branch CI and release commit check",
-      "status": "PENDING",
-      "evidence": [],
-      "owner": "Engineering"
+      "status": "PASS",
+      "evidence": [
+        "https://github.com/2010180016y-netizen/returnwise_az/actions/runs/41597679544",
+        "commit 7e5d704d99c43ebf33a87ec493d8b375b472e3ea",
+        "485 node tests and 60 browser cross-engine tests passed"
+      ],
+      "owner": "Engineering",
+      "notes": "GitHub Actions run 41597679544 passed all jobs on main push."
     },
     {
       "id": "F03",

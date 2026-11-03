@@ -49,7 +49,7 @@ async function runTests() {
   }
 
   const nodePath = process.execPath;
-  const command = `"${nodePath}" --disable-wasm-trap-handler --test --experimental-test-coverage ${outFiles.map(f => `"${f}"`).join(' ')}`;
+  const command = `"${nodePath}" --disable-wasm-trap-handler --experimental-sqlite --test --experimental-test-coverage ${outFiles.map(f => `"${f}"`).join(' ')}`;
 
   try {
     execSync(command, { stdio: 'inherit' });
