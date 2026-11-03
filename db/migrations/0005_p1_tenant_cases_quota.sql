@@ -47,17 +47,24 @@ CREATE INDEX idx_cases_p1_retention ON cases(retention_expires_at);
 CREATE TABLE case_tombstones (
   tenant_id TEXT NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
   case_id TEXT NOT NULL,
+  idempotency_key TEXT,
   deleted_at INTEGER NOT NULL,
   PRIMARY KEY(tenant_id,case_id)
 );
-INSERT INTO case_tombstones(tenant_id,case_id,deleted_at)
-SELECT tenant_id,id,updated_at FROM cases WHERE is_deleted=1;
+CREATE UNIQUE INDEX idx_case_tombstones_idempotency
+ON case_tombstones(tenant_id,idempotency_key)
+WHERE idempotency_key IS NOT NULL;
+INSERT INTO case_tombstones(tenant_id,case_id,idempotency_key,deleted_at)
+SELECT tenant_id,id,idempotency_key,updated_at FROM cases WHERE is_deleted=1;
 
 CREATE TRIGGER cases_p1_no_deleted_reinsert
 BEFORE INSERT ON cases
 WHEN EXISTS (
   SELECT 1 FROM case_tombstones
-  WHERE tenant_id=NEW.tenant_id AND case_id=NEW.id
+  WHERE tenant_id=NEW.tenant_id AND (
+    case_id=NEW.id OR
+    (NEW.idempotency_key IS NOT NULL AND idempotency_key=NEW.idempotency_key)
+  )
 )
 BEGIN
   SELECT RAISE(ABORT,'CASE_TOMBSTONED');
@@ -78,18 +85,20 @@ CREATE TRIGGER cases_p1_soft_delete
 AFTER UPDATE OF is_deleted ON cases
 WHEN OLD.is_deleted=0 AND NEW.is_deleted=1
 BEGIN
-  INSERT INTO case_tombstones(tenant_id,case_id,deleted_at)
-  VALUES(NEW.tenant_id,NEW.id,NEW.updated_at)
+  INSERT INTO case_tombstones(tenant_id,case_id,idempotency_key,deleted_at)
+  VALUES(NEW.tenant_id,NEW.id,NEW.idempotency_key,NEW.updated_at)
   ON CONFLICT(tenant_id,case_id) DO UPDATE SET
+    idempotency_key=COALESCE(excluded.idempotency_key,case_tombstones.idempotency_key),
     deleted_at=MAX(case_tombstones.deleted_at,excluded.deleted_at);
 END;
 
 CREATE TRIGGER cases_p1_hard_delete
 AFTER DELETE ON cases
 BEGIN
-  INSERT INTO case_tombstones(tenant_id,case_id,deleted_at)
-  VALUES(OLD.tenant_id,OLD.id,OLD.updated_at)
+  INSERT INTO case_tombstones(tenant_id,case_id,idempotency_key,deleted_at)
+  VALUES(OLD.tenant_id,OLD.id,OLD.idempotency_key,OLD.updated_at)
   ON CONFLICT(tenant_id,case_id) DO UPDATE SET
+    idempotency_key=COALESCE(excluded.idempotency_key,case_tombstones.idempotency_key),
     deleted_at=MAX(case_tombstones.deleted_at,excluded.deleted_at);
 END;
 
