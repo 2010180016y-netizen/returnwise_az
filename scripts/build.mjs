@@ -4,9 +4,9 @@ import path from 'path';
 
 async function buildApp() {
   const distDir = path.resolve('dist');
-  if (!fs.existsSync(distDir)) {
-    fs.mkdirSync(distDir, { recursive: true });
-  }
+  // A successful build must not ship stale files from a previous build.
+  fs.rmSync(distDir, { recursive: true, force: true });
+  fs.mkdirSync(distDir, { recursive: true });
 
   // 1. Bundle JavaScript & CSS
   console.log('Building ReturnWise production bundle with esbuild...');
@@ -24,10 +24,11 @@ async function buildApp() {
 
   // 2. Copy index.html and inject script
   let html = fs.readFileSync('index.html', 'utf-8');
-  html = html.replace(
-    '<script type="module" src="/src/main.tsx"></script>',
-    '<script type="module" src="/assets/index.js"></script>'
-  );
+  const sourceEntry = '<script type="module" src="/src/main.tsx"></script>';
+  if (!html.includes(sourceEntry)) {
+    throw new Error('BUILD_ENTRY_NOT_FOUND: index.html is missing the source entry script.');
+  }
+  html = html.replace(sourceEntry, '<script type="module" src="/assets/index.js"></script>');
   fs.writeFileSync('dist/index.html', html, 'utf-8');
 
   // 3. Copy public files if any
