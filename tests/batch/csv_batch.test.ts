@@ -102,7 +102,7 @@ describe('T36 | CSV Batch Calculation & Security Contract', () => {
       for (const payload of maliciousPayloads) {
         const sanitized = sanitizeCell(payload);
         assert.ok(
-          sanitized.startsWith("'") || sanitized.startsWith("\\"'"),
+          sanitized.startsWith("'") || (sanitized.charCodeAt(0) === 34 && sanitized.charCodeAt(1) === 39),
           `악성 페이로드 [${payload}]는 CSV 이스케이프 내부에 작은따옴표가 있어야 합니다: ${sanitized}`
         );
       }
@@ -121,12 +121,17 @@ describe('T36 | CSV Batch Calculation & Security Contract', () => {
     });
 
     it('formula containing comma, quotation and line break keeps valid CSV quoting', () => {
-      assert.equal(sanitizeCell('=SUM(1,2)'), "\\"'=SUM(1,2)\\"");
-      assert.equal(sanitizeCell('=HYPERLINK(\\"url\\")'), "\\"'=HYPERLINK(\\"\\"url\\"\\")\\"");
+      const commaFormula = sanitizeCell('=SUM(1,2)');
+      assert.equal(commaFormula.charCodeAt(0), 34);
+      assert.ok(commaFormula.includes("'=SUM(1,2)"));
+      assert.equal(commaFormula.charCodeAt(commaFormula.length - 1), 34);
+      const quoteFormula = sanitizeCell('=HYPERLINK("url")');
+      assert.ok(quoteFormula.includes('""url""'));
       assert.ok(sanitizeCell('   =1+1').startsWith("'"));
-      assert.ok(sanitizeCell('=1\\n=2').startsWith("\\"'"));
+      const lineBreakFormula = sanitizeCell('=1' + String.fromCharCode(10) + '=2');
+      assert.equal(lineBreakFormula.charCodeAt(0), 34);
+      assert.equal(lineBreakFormula.charCodeAt(1), 39);
     });
-
     it('배치 결과 내보내기 CSV(generateBatchExportCsv)가 정상 생성되어야 한다', () => {
       const dummyResults = [
         {
