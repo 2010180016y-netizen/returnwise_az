@@ -1,3 +1,7 @@
+> **[S6 정정] 이 문서의 기존 PASS/완료 표현은 과거 모의 테스트 및 서면 계획 기준이며 실제 Cloudflare 배포·운영자 법률 검토·사람 서명·현장 UAT 승인에 대한 증빙이 아닙니다. 연결된 Cloudflare 계정은 확인 당시 Pages 프로젝트/D1 데이터베이스가 모두 0개였습니다. **무료 공개는 BLOCKED**: docs/release/S6_GATE_MANIFEST.json이 현행 판정 기준입니다.**
+>
+> 근거·승인 책임: [S6 출시에 필요한 실제 증빙](./release/S6_GATE_MANIFEST.json). 과거 테스트 기록 자체를 삭제하거나 위조한 것은 아닙니다.
+
 # ReturnWise 프로덕션 출시 승인서 (LAUNCH_APPROVAL.md)
 
 - **제품명**: ReturnWise (한국 소규모 판매자를 위한 반품·환불·교환 비용 비교 계산기)

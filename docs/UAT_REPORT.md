@@ -1,3 +1,7 @@
+> **[S6 정정] 기존의 'Chrome/Safari/Edge/Mobile Webkit 실제 UAT PASS'는 해당 브라우저/실기기·실사용자 검증 로그를 포함하지 않은 과거 문서 주장입니다. S5는 Chromium 자동화 24/24만 독립 입증했습니다. S6의 Firefox/WebKit CI를 통과하더라도 실기기·스크린리더·실사용자 UAT는 별도 증빙 전까지 **PENDING**입니다.**
+>
+> 근거·승인 책임: [S6 출시에 필요한 실제 증빙](./release/S6_GATE_MANIFEST.json). 과거 테스트 기록 자체를 삭제하거나 위조한 것은 아닙니다.
+
 # ReturnWise 최종 사용자 수용성 테스트 보고서 (UAT_REPORT.md)
 
 - **테스트 일시**: 2026-11-03 10:25 (Asia/Seoul)

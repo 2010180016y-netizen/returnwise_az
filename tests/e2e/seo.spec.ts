@@ -61,7 +61,7 @@ describe('T22 | SEO, Performance & Content Indexing Contract', () => {
   });
 
   describe('2. Open Graph & Twitter Card 소셜 메타 태그 검증', () => {
-    it('Open Graph 필수 태그 8종(type, locale, site_name, title, description, url, image, alt)이 정의되어야 한다', () => {
+    it('OG 메타정보는 제공하되 존재하지 않는 이미지는 공개하지 않는다', () => {
       const html = fs.readFileSync(path.resolve('index.html'), 'utf-8');
       assert.ok(html.includes('property="og:type" content="website"'));
       assert.ok(html.includes('property="og:locale" content="ko_KR"'));
@@ -69,16 +69,16 @@ describe('T22 | SEO, Performance & Content Indexing Contract', () => {
       assert.ok(html.includes('property="og:title"'));
       assert.ok(html.includes('property="og:description"'));
       assert.ok(html.includes('property="og:url" content="https://returnwise.pages.dev/"'));
-      assert.ok(html.includes('property="og:image"'));
-      assert.ok(html.includes('property="og:image:alt"'));
+      assert.ok(!/<meta property="og:image"/.test(html));
+      assert.ok(!html.includes('og-image.png'));
     });
 
-    it('Twitter Card 태그 4종(card, title, description, image)이 정의되어야 한다', () => {
+    it('Twitter Card 이미지 없는 실제 문구와 카드 형식이 일치해야 한다', () => {
       const html = fs.readFileSync(path.resolve('index.html'), 'utf-8');
-      assert.ok(html.includes('name="twitter:card" content="summary_large_image"'));
+      assert.ok(html.includes('name="twitter:card" content="summary"'));
       assert.ok(html.includes('name="twitter:title"'));
       assert.ok(html.includes('name="twitter:description"'));
-      assert.ok(html.includes('name="twitter:image"'));
+      assert.ok(!/<meta name="twitter:image"/.test(html));
     });
   });
 

@@ -390,8 +390,8 @@ describe('T21 | Security, Privacy & Dependency Audit Contract', () => {
         '방침에 로컬 연산 및 외부 전송 부재가 선언되어야 합니다.'
       );
       assert.ok(
-        PRIVACY_POLICY_SUMMARY.includes('제3자 트래커 및 쿠키 미사용'),
-        '방침에 트래커/쿠키 미사용이 선언되어야 합니다.'
+        PRIVACY_POLICY_SUMMARY.includes('현재 무료 버전의 별도 추적 코드 없음'),
+        '현재 코드 범위와 호스팅 로그에 대한 구분이 고지되어야 합니다.'
       );
     });
 

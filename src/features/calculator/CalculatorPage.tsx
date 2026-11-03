@@ -81,7 +81,7 @@ export const CalculatorPage: React.FC = () => {
           반품 한 건, 실제로 얼마가 더 들까요?
         </h1>
         <p style={{ maxWidth: '640px', margin: '0 auto', color: 'var(--color-slate-600)', fontSize: '0.9375rem' }}>
-          2026 전자상거래법과 마켓 규정을 침해하지 않는 허용된 처리 방식별{' '}
+          2026 전자상거래법과 마켓 정책 확인을 돕는 참고용 처리 방식별{' '}
           <strong>추가 현금 지출</strong>과 <strong>순경제적 비용</strong>을 30초 내에 투명하게 대조합니다.
         </p>
       </section>
@@ -306,7 +306,7 @@ export const CalculatorPage: React.FC = () => {
           © 2026 ReturnWise. 본 계산기는 한국 개정 전자상거래법(2026.7.21 시행) 및 판매자 표준 약관에 기초한 재무 시뮬레이션 도구입니다.
         </p>
         <p style={{ margin: 0 }}>
-          개인정보 및 주문 식별값 수집 제로 (No PII) · 100% 브라우저 로컬 순수 연산
+          계산기·CSV 미리보기는 브라우저 내에서 처리됩니다 · 고객 식별정보 없는 CSV 사용 권장 · 서버 업로드 없음
         </p>
         <div className="rw-flex" style={{ justifyContent: 'center', gap: '1rem', marginTop: '0.5rem' }}>
           <a href="#operator" style={{ color: 'var(--color-slate-600)' }}>이용약관 초안</a>
