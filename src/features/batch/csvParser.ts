@@ -13,7 +13,6 @@ import type {
 } from './types';
 import type { DecisionFlags, PlatformType, ReturnReason, BuyerRequest, ScenarioInput } from '../../domain/types';
 
-const MAX_BYTES = 5 * 1024 * 1024;
 const MAX_ROWS = 1000;
 const MAX_COLS = 64;
 const MAX_CELL_CHARS = 50000;
