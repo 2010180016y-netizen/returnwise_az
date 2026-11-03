@@ -43,20 +43,27 @@ export class SQLiteD1 implements D1DatabaseLike {
   prepare(sql: string): Prepared {
     return new Prepared(this,sql);
   }
+  private batchTail: Promise<void> = Promise.resolve();
   async batch(statements: D1StatementLike[]) {
-    const results: Array<{success?:boolean;meta:{changes:number}}> = [];
-    this.sqlite.exec('BEGIN IMMEDIATE');
-    try {
-      for(const statement of statements) {
-        const result=await statement.run();
-        results.push(result);
+    // D1 serializes transactions. A single SQLite connection in CI needs
+    // an explicit FIFO queue; otherwise concurrent BEGIN calls overlap.
+    const work = this.batchTail.then(async () => {
+      const results: Array<{success?:boolean;meta:{changes:number}}> = [];
+      this.sqlite.exec('BEGIN IMMEDIATE');
+      try {
+        for(const statement of statements) {
+          const result=await statement.run();
+          results.push(result);
+        }
+        this.sqlite.exec('COMMIT');
+        return results;
+      } catch(err) {
+        this.sqlite.exec('ROLLBACK');
+        throw err;
       }
-      this.sqlite.exec('COMMIT');
-      return results;
-    } catch(err) {
-      this.sqlite.exec('ROLLBACK');
-      throw err;
-    }
+    });
+    this.batchTail = work.then(() => undefined, () => undefined);
+    return work;
   }
   seedTenant(tenantId: string, userId: string, role: 'OWNER'|'MEMBER'='OWNER') {
     const now=Date.now();
